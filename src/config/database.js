@@ -50,4 +50,5 @@ class Database {
 
 // Singleton instance
 const database = new Database();
+
 module.exports = database;

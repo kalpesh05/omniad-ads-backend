@@ -55,7 +55,7 @@ process.on('message', (message) => {
 process.on('disconnect', () => {
   console.log('Disconnected from parent process');
 });
-process.on('listening', () => {
+process.on('listening', () => { 
   console.log('Server is listening for requests');
 });
 process.on('close', () => {
