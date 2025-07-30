@@ -8,6 +8,7 @@ const path = require('path');
 const authRoutes = require('./src/routes/authRoutes');
 const userRoutes = require('./src/routes/userRoutes');
 const uploadRoutes = require('./src/routes/uploadRoutes');
+const adAuthRoutes = require('./src/routes/adAuthRoutes');
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.get('/health', (req, res) => {
 
 // API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/ads', adAuthRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api', uploadRoutes);
 
