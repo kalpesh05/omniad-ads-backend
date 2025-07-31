@@ -16,6 +16,7 @@ const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const indexRoutes = require('./routes/index');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
+const adsAuthRoutes = require('./routes/adsAuthRoutes');
 
 // Import database
 const { testConnection, initializeDatabase } = require('./config/database');
@@ -58,6 +59,7 @@ app.use('/api/auth/change-password', passwordLimiter);
 app.use('/api', indexRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/ads', adsAuthRoutes);
 
 // Error handling middleware
 app.use(notFoundHandler);

@@ -57,6 +57,7 @@ const initializeDatabase = async () => {
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL,
         token VARCHAR(500) NOT NULL,
+        type ENUM('access', 'refresh') DEFAULT 'access',
         expires_at TIMESTAMP NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -64,6 +65,22 @@ const initializeDatabase = async () => {
         INDEX idx_token (token(255))
       )
     `);
+    // Create ads_tokens table
+    await promisePool.execute(`
+      CREATE TABLE IF NOT EXISTS ads_tokens (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id INT NOT NULL,
+          platform VARCHAR(50) NOT NULL,         
+          access_token TEXT NOT NULL,
+          refresh_token TEXT,
+          expiry_date BIGINT,                    
+          token_type VARCHAR(50),               
+          scope TEXT,                           
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+          UNIQUE KEY unique_user_platform (user_id, platform)
+      )`);
 
     console.log('✅ Database tables initialized successfully');
   } catch (error) {
