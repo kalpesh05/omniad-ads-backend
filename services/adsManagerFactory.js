@@ -1,5 +1,6 @@
 const FacebookAdsManager = require('./facebookAdsManager');
 const GoogleAdsManager = require('./googleAdsManager');
+const YouTubeAdsManager = require('./youTubeAdsManager');
 const authService = require('./authService');
 
 class AdsManagerFactory {
@@ -11,13 +12,15 @@ class AdsManagerFactory {
       case 'google':
       case 'googleads':
         return new GoogleAdsManager(authService);
+      case 'youtube':
+        return new YouTubeAdsManager(authService);
       default:
         throw new Error(`Unsupported platform: ${platform}`);
     }
   }
 
   static getSupportedPlatforms() {
-    return ['facebook', 'google'];
+    return ['facebook', 'google', 'youtube', 'meta'];
   }
 
   static validatePlatform(platform) {
