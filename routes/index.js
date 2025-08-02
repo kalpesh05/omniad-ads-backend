@@ -16,6 +16,8 @@ router.get('/', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       users: '/api/users',
+      adsauth: '/api/ads-auth',
+      ads: '/api/ads',
       health: '/api/health'
     }
   }, 'Welcome to the API');

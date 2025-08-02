@@ -82,6 +82,27 @@ const initializeDatabase = async () => {
           UNIQUE KEY unique_user_platform (user_id, platform)
       )`);
 
+    // Create ads_accounts table
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS ads_accounts (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        platform ENUM('facebook', 'google') NOT NULL,
+        account_id VARCHAR(255) NOT NULL,
+        account_name VARCHAR(255) NOT NULL,
+        access_token TEXT NOT NULL,
+        refresh_token TEXT,
+        token_expires_at DATETIME,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        INDEX idx_user_platform (user_id, platform),
+        INDEX idx_account_id (account_id),
+        INDEX idx_platform (platform)
+      )
+    `);
+
     console.log('✅ Database tables initialized successfully');
   } catch (error) {
     console.error('❌ Database initialization failed:', error.message);
