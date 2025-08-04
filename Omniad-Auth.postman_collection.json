@@ -1,0 +1,619 @@
+{
+  "info": {
+    "name": "Omniad Auth API",
+    "_postman_id": "omniad-auth-api-collection",
+    "description": "Postman collection for Omniad Auth API routes",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"New User\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/auth/register",
+              "host": ["{{host}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/auth/login",
+              "host": ["{{host}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Save JWT token to environment variable",
+                  "if (pm.response.code === 200) {",
+                  "  var json = pm.response.json();",
+                  "  if(json.data && json.data.token){",
+                  "    pm.environment.set('token', json.data.token);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"<your_refresh_token_here>\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/auth/refresh-token",
+              "host": ["{{host}}"],
+              "path": ["api", "auth", "refresh-token"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/auth/logout",
+              "host": ["{{host}}"],
+              "path": ["api", "auth", "logout"]
+            }
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/auth/profile",
+              "host": ["{{host}}"],
+              "path": ["api", "auth", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/auth/profile",
+              "host": ["{{host}}"],
+              "path": ["api", "auth", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oldPassword\": \"password123\",\n  \"newPassword\": \"newpassword456\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/auth/change-password",
+              "host": ["{{host}}"],
+              "path": ["api", "auth", "change-password"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users (Admin/Moderator)",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/users",
+              "host": ["{{host}}"],
+              "path": ["api", "users"]
+            }
+          }
+        },
+        {
+          "name": "Get User Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/users/stats",
+              "host": ["{{host}}"],
+              "path": ["api", "users", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/users/1",
+              "host": ["{{host}}"],
+              "path": ["api", "users", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update User by ID",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated User\",\n  \"role\": \"moderator\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/users/1",
+              "host": ["{{host}}"],
+              "path": ["api", "users", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete User by ID (Admin only)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/users/1",
+              "host": ["{{host}}"],
+              "path": ["api", "users", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ads",
+      "item": [
+        {
+          "name": "auth",
+          "item": [
+            {
+              "name": "Ads Login",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"adsuser@example.com\",\n  \"password\": \"password\"\n}"
+                },
+                "url": {
+                  "raw": "{{host}}/api/ads-auth/login",
+                  "host": ["{{host}}"],
+                  "path": ["api", "ads-auth", "login"]
+                }
+              }
+            },
+            {
+              "name": "Generate Auth URLs (Case)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{host}}/api/ads-auth/auth-url/case/sampleCase",
+                  "host": ["{{host}}"],
+                  "path": ["api", "ads-auth", "auth-url", "case", "sampleCase"]
+                }
+              }
+            },
+            {
+              "name": "Generate Auth URL (Platform)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{host}}/api/ads-auth/auth-url/platform/google",
+                  "host": ["{{host}}"],
+                  "path": ["api", "ads-auth", "auth-url", "platform", "google"]
+                }
+              }
+            },
+            {
+              "name": "OAuth Callback (Platform)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{host}}/api/ads-auth/callback/google",
+                  "host": ["{{host}}"],
+                  "path": ["api", "ads-auth", "callback", "google"]
+                }
+              }
+            },
+            {
+              "name": "Check Auth Status (Case)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{host}}/api/ads-auth/auth-status/case/sampleCase",
+                  "host": ["{{host}}"],
+                  "path": ["api", "ads-auth", "auth-status", "case", "sampleCase"]
+                }
+              }
+            },
+            {
+              "name": "Get Full Auth Status",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{host}}/api/ads-auth/auth-status/full",
+                  "host": ["{{host}}"],
+                  "path": ["api", "ads-auth", "auth-status", "full"]
+                }
+              }
+            },
+            {
+              "name": "Refresh Tokens",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"platform\": \"google\"\n}"
+                },
+                "url": {
+                  "raw": "{{host}}/api/ads-auth/refresh-tokens",
+                  "host": ["{{host}}"],
+                  "path": ["api", "ads-auth", "refresh-tokens"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Utility",
+          "item": [
+            {
+              "name": "Get Supported Platforms",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{host}}/api/ads/platforms",
+                  "host": ["{{host}}"],
+                  "path": ["api", "ads", "platforms"]
+                }
+              }
+            },
+            {
+              "name": "Check Platform Health",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{host}}/api/ads/facebook/health",
+                  "host": ["{{host}}"],
+                  "path": ["api", "ads", "facebook", "health"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Account Management",
+          "item": [
+            {
+              "name": "Get Ad Accounts",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{host}}/api/ads/facebook/accounts",
+                  "host": ["{{host}}"],
+                  "path": ["api", "ads", "facebook", "accounts"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Campaign Management",
+          "item": [
+            {
+              "name": "Get Campaigns",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{host}}/api/ads/facebook/accounts/123/campaigns",
+                  "host": ["{{host}}"],
+                  "path": ["api", "ads", "facebook", "accounts", "123", "campaigns"]
+                }
+              }
+            },
+            {
+              "name": "Create Campaign",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"My Campaign\",\n  \"objective\": \"LINK_CLICKS\"\n}"
+                },
+                "url": {
+                  "raw": "{{host}}/api/ads/facebook/accounts/123/campaigns",
+                  "host": ["{{host}}"],
+                  "path": ["api", "ads", "facebook", "accounts", "123", "campaigns"]
+                }
+              }
+            },
+            {
+              "name": "Update Campaign",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Updated Campaign\"\n}"
+                },
+                "url": {
+                  "raw": "{{host}}/api/ads/facebook/accounts/123/campaigns/456",
+                  "host": ["{{host}}"],
+                  "path": ["api", "ads", "facebook", "accounts", "123", "campaigns", "456"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ad Set Management",
+          "item": [
+            {
+              "name": "Get Ad Sets",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{host}}/api/ads/facebook/accounts/123/adsets",
+                  "host": ["{{host}}"],
+                  "path": ["api", "ads", "facebook", "accounts", "123", "adsets"]
+                }
+              }
+            },
+            {
+              "name": "Create Ad Set",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"My Ad Set\"\n}"
+                },
+                "url": {
+                  "raw": "{{host}}/api/ads/facebook/accounts/123/campaigns/456/adsets",
+                  "host": ["{{host}}"],
+                  "path": ["api", "ads", "facebook", "accounts", "123", "campaigns", "456", "adsets"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ad Management",
+          "item": [
+            {
+              "name": "Get Ads",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{host}}/api/ads/facebook/accounts/123/ads",
+                  "host": ["{{host}}"],
+                  "path": ["api", "ads", "facebook", "accounts", "123", "ads"]
+                }
+              }
+            },
+            {
+              "name": "Create Ad",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"My Ad\"\n}"
+                },
+                "url": {
+                  "raw": "{{host}}/api/ads/facebook/accounts/123/adsets/789/ads",
+                  "host": ["{{host}}"],
+                  "path": ["api", "ads", "facebook", "accounts", "123", "adsets", "789", "ads"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reporting & Analytics",
+          "item": [
+            {
+              "name": "Get Insights",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{host}}/api/ads/facebook/accounts/123/insights/456",
+                  "host": ["{{host}}"],
+                  "path": ["api", "ads", "facebook", "accounts", "123", "insights", "456"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "YouTube Specific",
+          "item": [
+            {
+              "name": "Get Channels",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{host}}/api/ads/youtube/channels",
+                  "host": ["{{host}}"],
+                  "path": ["api", "ads", "youtube", "channels"]
+                }
+              }
+            },
+            {
+              "name": "Get Channel Videos",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{host}}/api/ads/youtube/channels/abc/videos",
+                  "host": ["{{host}}"],
+                  "path": ["api", "ads", "youtube", "channels", "abc", "videos"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Facebook Specific",
+          "item": [
+            {
+              "name": "Get Business Accounts",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{host}}/api/ads/facebook/businesses",
+                  "host": ["{{host}}"],
+                  "path": ["api", "ads", "facebook", "businesses"]
+                }
+              }
+            },
+            {
+              "name": "Get Instagram Accounts",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{host}}/api/ads/facebook/instagram-accounts",
+                  "host": ["{{host}}"],
+                  "path": ["api", "ads", "facebook", "instagram-accounts"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
