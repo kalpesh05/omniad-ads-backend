@@ -2,9 +2,11 @@
 const express = require('express');
 const router = express.Router();
 const AdsAuthController = require('../controllers/adsAuthController');
-const requireAuth = require('../middleware/requireAuth');
+// const requireAuth = require('../middleware/requireAuth');
+const { authenticateToken } = require('../middleware/auth');
 
-router.use(requireAuth);
+
+router.use(authenticateToken);
 
 /**
  * @swagger

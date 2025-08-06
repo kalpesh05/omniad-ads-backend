@@ -1,7 +1,13 @@
 const express = require('express');
 const AdsController = require('../controllers/adsController');
-const { authenticate } = require('../middleware/auth');
-const { validate, adsSchemas } = require('../middleware/validation');
+const { authenticateToken } = require('../middleware/auth');
+const {
+  validateCreateCampaign,
+  validateUpdateCampaign,
+  validateCreateAdSet,
+  validateCreateAd,
+  validateGetInsights
+} = require('../middleware/validation');
 
 const router = express.Router();
 
@@ -165,7 +171,7 @@ const router = express.Router();
  *                     count:
  *                       type: number
  */
-router.get('/platforms', authenticate, AdsController.getSupportedPlatforms);
+router.get('/platforms', authenticateToken, AdsController.getSupportedPlatforms);
 
 /**
  * @swagger
@@ -187,7 +193,7 @@ router.get('/platforms', authenticate, AdsController.getSupportedPlatforms);
  *       200:
  *         description: Platform health check completed
  */
-router.get('/:platform/health', authenticate, AdsController.checkPlatformHealth);
+router.get('/:platform/health', authenticateToken, AdsController.checkPlatformHealth);
 
 // ===========================================
 // ACCOUNT MANAGEMENT
@@ -229,7 +235,7 @@ router.get('/:platform/health', authenticate, AdsController.checkPlatformHealth)
  *                       items:
  *                         $ref: '#/components/schemas/AdAccount'
  */
-router.get('/:platform/accounts', authenticate, AdsController.getAdAccounts);
+router.get('/:platform/accounts', authenticateToken, AdsController.getAdAccounts);
 
 // ===========================================
 // CAMPAIGN MANAGEMENT
@@ -290,7 +296,7 @@ router.get('/:platform/accounts', authenticate, AdsController.getAdAccounts);
  *                       items:
  *                         $ref: '#/components/schemas/Campaign'
  */
-router.get('/:platform/accounts/:accountId/campaigns', authenticate, AdsController.getCampaigns);
+router.get('/:platform/accounts/:accountId/campaigns', authenticateToken, AdsController.getCampaigns);
 
 /**
  * @swagger
@@ -343,8 +349,8 @@ router.get('/:platform/accounts/:accountId/campaigns', authenticate, AdsControll
  *         description: Campaign created successfully
  */
 router.post('/:platform/accounts/:accountId/campaigns',
-  authenticate,
-  validate(adsSchemas.createCampaign),
+  authenticateToken,
+  validateCreateCampaign,
   AdsController.createCampaign
 );
 
@@ -392,8 +398,8 @@ router.post('/:platform/accounts/:accountId/campaigns',
  *         description: Campaign updated successfully
  */
 router.put('/:platform/accounts/:accountId/campaigns/:campaignId',
-  authenticate,
-  validate(adsSchemas.updateCampaign),
+  authenticateToken,
+  validateUpdateCampaign,
   AdsController.updateCampaign
 );
 
@@ -430,7 +436,7 @@ router.put('/:platform/accounts/:accountId/campaigns/:campaignId',
  *       200:
  *         description: Ad sets retrieved successfully
  */
-router.get('/:platform/accounts/:accountId/adsets', authenticate, AdsController.getAdSets);
+router.get('/:platform/accounts/:accountId/adsets', authenticateToken, AdsController.getAdSets);
 
 /**
  * @swagger
@@ -481,8 +487,8 @@ router.get('/:platform/accounts/:accountId/adsets', authenticate, AdsController.
  *         description: Ad set created successfully
  */
 router.post('/:platform/accounts/:accountId/campaigns/:campaignId/adsets',
-  authenticate,
-  validate(adsSchemas.createAdSet),
+  authenticateToken,
+  validateCreateAdSet,
   AdsController.createAdSet
 );
 
@@ -519,7 +525,7 @@ router.post('/:platform/accounts/:accountId/campaigns/:campaignId/adsets',
  *       200:
  *         description: Ads retrieved successfully
  */
-router.get('/:platform/accounts/:accountId/ads', authenticate, AdsController.getAds);
+router.get('/:platform/accounts/:accountId/ads', authenticateToken, AdsController.getAds);
 
 /**
  * @swagger
@@ -578,8 +584,8 @@ router.get('/:platform/accounts/:accountId/ads', authenticate, AdsController.get
  *         description: Ad created successfully
  */
 router.post('/:platform/accounts/:accountId/adsets/:adSetId/ads',
-  authenticate,
-  validate(adsSchemas.createAd),
+  authenticateToken,
+  validateCreateAd,
   AdsController.createAd
 );
 
@@ -669,8 +675,8 @@ router.post('/:platform/accounts/:accountId/adsets/:adSetId/ads',
  *                         $ref: '#/components/schemas/Insights'
  */
 router.get('/:platform/accounts/:accountId/insights/:objectId',
-  authenticate,
-  validate(adsSchemas.getInsights, 'query'),
+  authenticateToken,
+  validateGetInsights,
   AdsController.getInsights
 );
 
@@ -704,7 +710,7 @@ router.get('/:platform/accounts/:accountId/insights/:objectId',
  *                       items:
  *                         $ref: '#/components/schemas/Channel'
  */
-router.get('/youtube/channels', authenticate, AdsController.getChannels);
+router.get('/youtube/channels', authenticateToken, AdsController.getChannels);
 
 /**
  * @swagger
@@ -753,7 +759,7 @@ router.get('/youtube/channels', authenticate, AdsController.getChannels);
  *                       items:
  *                         $ref: '#/components/schemas/Video'
  */
-router.get('/youtube/channels/:channelId/videos', authenticate, AdsController.getChannelVideos);
+router.get('/youtube/channels/:channelId/videos', authenticateToken, AdsController.getChannelVideos);
 
 /**
  * @swagger
@@ -788,7 +794,7 @@ router.get('/youtube/channels/:channelId/videos', authenticate, AdsController.ge
  *                           verification_status:
  *                             type: string
  */
-router.get('/facebook/businesses', authenticate, AdsController.getBusinessAccounts);
+router.get('/facebook/businesses', authenticateToken, AdsController.getBusinessAccounts);
 
 /**
  * @swagger
@@ -825,7 +831,7 @@ router.get('/facebook/businesses', authenticate, AdsController.getBusinessAccoun
  *                           profile_picture_url:
  *                             type: string
  */
-router.get('/facebook/instagram-accounts', authenticate, AdsController.getInstagramAccounts);
+router.get('/facebook/instagram-accounts', authenticateToken, AdsController.getInstagramAccounts);
 
 // ===========================================
 // FACEBOOK CREATIVE MANAGEMENT
@@ -870,7 +876,7 @@ router.get('/facebook/instagram-accounts', authenticate, AdsController.getInstag
  *                       items:
  *                         $ref: '#/components/schemas/Creative'
  */
-router.get('/facebook/accounts/:accountId/creatives', authenticate, AdsController.getAdCreatives);
+router.get('/facebook/accounts/:accountId/creatives', authenticateToken, AdsController.getAdCreatives);
 
 /**
  * @swagger
@@ -912,7 +918,7 @@ router.get('/facebook/accounts/:accountId/creatives', authenticate, AdsControlle
  *       201:
  *         description: Creative created successfully
  */
-router.post('/facebook/accounts/:accountId/creatives', authenticate, AdsController.createAdCreative);
+router.post('/facebook/accounts/:accountId/creatives', authenticateToken, AdsController.createAdCreative);
 
 /**
  * @swagger
@@ -959,7 +965,7 @@ router.post('/facebook/accounts/:accountId/creatives', authenticate, AdsControll
  *                     url:
  *                       type: string
  */
-router.post('/facebook/accounts/:accountId/images', authenticate, AdsController.uploadImage);
+router.post('/facebook/accounts/:accountId/images', authenticateToken, AdsController.uploadImage);
 
 // ===========================================
 // YOUTUBE SPECIFIC ROUTES
@@ -1010,7 +1016,7 @@ router.post('/facebook/accounts/:accountId/images', authenticate, AdsController.
  *       201:
  *         description: Bumper ad created successfully
  */
-router.post('/youtube/accounts/:accountId/adsets/:adSetId/bumper-ads', authenticate, AdsController.createBumperAd);
+router.post('/youtube/accounts/:accountId/adsets/:adSetId/bumper-ads', authenticateToken, AdsController.createBumperAd);
 
 /**
  * @swagger
@@ -1050,7 +1056,7 @@ router.post('/youtube/accounts/:accountId/adsets/:adSetId/bumper-ads', authentic
  *       201:
  *         description: Channel targeting added successfully
  */
-router.post('/youtube/accounts/:accountId/adgroups/:adGroupId/targeting/channels', authenticate, AdsController.addChannelTargeting);
+router.post('/youtube/accounts/:accountId/adgroups/:adGroupId/targeting/channels', authenticateToken, AdsController.addChannelTargeting);
 
 /**
  * @swagger
@@ -1091,7 +1097,7 @@ router.post('/youtube/accounts/:accountId/adgroups/:adGroupId/targeting/channels
  *       201:
  *         description: Video uploaded successfully
  */
-router.post('/youtube/accounts/:accountId/assets/videos', authenticate, AdsController.uploadVideoAsset);
+router.post('/youtube/accounts/:accountId/assets/videos', authenticateToken, AdsController.uploadVideoAsset);
 
 /**
  * @swagger
@@ -1125,7 +1131,7 @@ router.post('/youtube/accounts/:accountId/assets/videos', authenticate, AdsContr
  *       200:
  *         description: Video performance report retrieved successfully
  */
-router.get('/youtube/accounts/:accountId/reports/video-performance', authenticate, AdsController.getVideoPerformanceReport);
+router.get('/youtube/accounts/:accountId/reports/video-performance', authenticateToken, AdsController.getVideoPerformanceReport);
 
 /**
  * @swagger
@@ -1160,7 +1166,7 @@ router.get('/youtube/accounts/:accountId/reports/video-performance', authenticat
  *       200:
  *         description: Channel analytics retrieved successfully
  */
-router.get('/youtube/channels/:channelId/analytics', authenticate, AdsController.getChannelAnalytics);
+router.get('/youtube/channels/:channelId/analytics', authenticateToken, AdsController.getChannelAnalytics);
 
 // ===========================================
 // FACEBOOK TARGETING ROUTES
@@ -1196,7 +1202,7 @@ router.get('/youtube/channels/:channelId/analytics', authenticate, AdsController
  *       200:
  *         description: Targeting options retrieved successfully
  */
-router.get('/facebook/targeting/:type', authenticate, AdsController.getTargetingOptions);
+router.get('/facebook/targeting/:type', authenticateToken, AdsController.getTargetingOptions);
 
 /**
  * @swagger
@@ -1232,7 +1238,7 @@ router.get('/facebook/targeting/:type', authenticate, AdsController.getTargeting
  *       200:
  *         description: Delivery estimate retrieved successfully
  */
-router.post('/facebook/accounts/:accountId/delivery-estimate', authenticate, AdsController.getDeliveryEstimate);
+router.post('/facebook/accounts/:accountId/delivery-estimate', authenticateToken, AdsController.getDeliveryEstimate);
 
 // ===========================================
 // UPDATED REPORTING ROUTE
@@ -1295,7 +1301,7 @@ router.post('/facebook/accounts/:accountId/delivery-estimate', authenticate, Ads
  *       200:
  *         description: Insights retrieved successfully
  */
-router.get('/:platform/accounts/:accountId/:objectId/insights', authenticate, AdsController.getInsights);
+router.get('/:platform/accounts/:accountId/:objectId/insights', authenticateToken, AdsController.getInsights);
 
 // ===========================================
 // BULK OPERATIONS
@@ -1360,7 +1366,7 @@ router.get('/:platform/accounts/:accountId/:objectId/insights', authenticate, Ad
  *                       items:
  *                         type: object
  */
-router.put('/:platform/accounts/:accountId/campaigns/bulk/status', authenticate, AdsController.bulkUpdateCampaignStatus);
+router.put('/:platform/accounts/:accountId/campaigns/bulk/status', authenticateToken, AdsController.bulkUpdateCampaignStatus);
 
 
 

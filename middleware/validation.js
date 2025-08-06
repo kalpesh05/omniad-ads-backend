@@ -128,10 +128,137 @@ const validatePasswordChange = [
   handleValidationErrors
 ];
 
+// Ads: Create Campaign validation
+const validateCreateCampaign = [
+  body('name')
+    .trim()
+    .notEmpty()
+    .withMessage('Campaign name is required')
+    .isLength({ max: 100 })
+    .withMessage('Campaign name must not exceed 100 characters'),
+  body('objective')
+    .optional()
+    .isString()
+    .withMessage('Objective must be a string'),
+  body('status')
+    .optional()
+    .isIn(['ACTIVE', 'PAUSED', 'ENABLED', 'DISABLED'])
+    .withMessage('Invalid campaign status'),
+  body('dailyBudget')
+    .optional()
+    .isNumeric()
+    .withMessage('Daily budget must be a number'),
+  body('lifetimeBudget')
+    .optional()
+    .isNumeric()
+    .withMessage('Lifetime budget must be a number'),
+  body('startDate')
+    .optional()
+    .isISO8601()
+    .withMessage('Start date must be a valid date'),
+  body('endDate')
+    .optional()
+    .isISO8601()
+    .withMessage('End date must be a valid date'),
+  handleValidationErrors
+];
+
+// Ads: Update Campaign validation
+const validateUpdateCampaign = [
+  body('name')
+    .optional()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('Campaign name must not exceed 100 characters'),
+  body('status')
+    .optional()
+    .isIn(['ACTIVE', 'PAUSED', 'ENABLED', 'DISABLED'])
+    .withMessage('Invalid campaign status'),
+  body('dailyBudget')
+    .optional()
+    .isNumeric()
+    .withMessage('Daily budget must be a number'),
+  body('lifetimeBudget')
+    .optional()
+    .isNumeric()
+    .withMessage('Lifetime budget must be a number'),
+  handleValidationErrors
+];
+
+// Ads: Create AdSet validation
+const validateCreateAdSet = [
+  body('name')
+    .trim()
+    .notEmpty()
+    .withMessage('Ad set name is required')
+    .isLength({ max: 100 })
+    .withMessage('Ad set name must not exceed 100 characters'),
+  body('status')
+    .optional()
+    .isString()
+    .withMessage('Status must be a string'),
+  body('dailyBudget')
+    .optional()
+    .isNumeric()
+    .withMessage('Daily budget must be a number'),
+  body('targeting')
+    .optional()
+    .isObject()
+    .withMessage('Targeting must be an object'),
+  body('optimizationGoal')
+    .optional()
+    .isString()
+    .withMessage('Optimization goal must be a string'),
+  handleValidationErrors
+];
+
+// Ads: Create Ad validation
+const validateCreateAd = [
+  body('name')
+    .trim()
+    .notEmpty()
+    .withMessage('Ad name is required')
+    .isLength({ max: 100 })
+    .withMessage('Ad name must not exceed 100 characters'),
+  body('status')
+    .optional()
+    .isString()
+    .withMessage('Status must be a string'),
+  body('creativeId')
+    .optional()
+    .isString()
+    .withMessage('Creative ID must be a string'),
+  body('headlines')
+    .optional()
+    .isArray()
+    .withMessage('Headlines must be an array of strings'),
+  body('descriptions')
+    .optional()
+    .isArray()
+    .withMessage('Descriptions must be an array of strings'),
+  body('finalUrls')
+    .optional()
+    .isArray()
+    .withMessage('Final URLs must be an array of strings'),
+  handleValidationErrors
+];
+
+// Ads: Get Insights validation (for query params)
+const validateGetInsights = [
+  // You can add query validation here if needed
+  handleValidationErrors
+];
+
 module.exports = {
   validateRegistration,
   validateLogin,
   validateUserUpdate,
   validatePasswordChange,
-  handleValidationErrors
+  handleValidationErrors,
+  // Ads validations
+  validateCreateCampaign,
+  validateUpdateCampaign,
+  validateCreateAdSet,
+  validateCreateAd,
+  validateGetInsights
 };
