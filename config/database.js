@@ -1,6 +1,38 @@
 const mysql = require('mysql2');
 require('dotenv').config();
 
+// Ensure database exists before creating pool
+async function ensureDatabaseExists() {
+  const connection = mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    port: process.env.DB_PORT
+    // Do NOT specify database here
+  });
+  const dbName = process.env.DB_NAME;
+  return new Promise((resolve, reject) => {
+    connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`, (err) => {
+      connection.end();
+      if (err) return reject(err);
+      resolve();
+    });
+  });
+}
+
+// Call ensureDatabaseExists before pool creation
+(async () => {
+  try {
+    await ensureDatabaseExists();
+    // eslint-disable-next-line no-console
+    console.log(`✅ Database "${process.env.DB_NAME}" exists or was created`);
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('❌ Failed to ensure database exists:', err.message);
+    process.exit(1);
+  }
+})();
+
 // Create connection pool for better performance
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
@@ -83,7 +115,7 @@ const initializeDatabase = async () => {
       )`);
 
     // Create ads_accounts table
-    await connection.execute(`
+    await promisePool.execute(`
       CREATE TABLE IF NOT EXISTS ads_accounts (
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL,
