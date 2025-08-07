@@ -83,7 +83,7 @@ const initializeDatabase = async () => {
       )`);
 
     // Create ads_accounts table
-    await connection.execute(`
+    await promisePool.execute(`
       CREATE TABLE IF NOT EXISTS ads_accounts (
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL,
