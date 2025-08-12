@@ -7,6 +7,7 @@ const {
     notFoundResponse
 } = require('../utils/response');
 const AdsToken = require('../models/AdsToken'); // Adjust the path as needed
+const Adsservice = require('../services/authService'); // Adjust the path as needed
 
 const authenticator = new AdPlatformAuthenticator();
 
@@ -49,6 +50,9 @@ class AdsAuthController {
             const userId = req.user.id;
 
             const tokenData = await authenticator.handleCallback(platform, code, state, userId);
+
+
+
             // Destructure relevant fields
             const {
                 access_token,
@@ -60,16 +64,20 @@ class AdsAuthController {
             if (!access_token) {
                 return errorResponse(res, 'Access token not received from OAuth callback');
             }
+            // Check if tokenData has ads accounts
+            if (tokenData && tokenData.permissions && tokenData.permissions.totalAccounts > 0) {
+                await Adsservice.storeAdsAccessToken(userId, platform, tokenData.permissions)
+            }
+            
             // Save or update token in DB
-            const savedToken = await AdsToken.upsert({
-                user_id: userId,
-                platform,
+            const savedToken = await Adsservice.storeAccessToken(userId, platform, {
                 access_token,
                 refresh_token,
                 expiry_date,
                 token_type,
                 scope
             });
+
             successResponse(res, savedToken.toJSON(), `${platform} account authenticated successfully`);
         } catch (error) {
             console.error('OAuth Callback Error:', error);

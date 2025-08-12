@@ -1,4 +1,5 @@
 const AdsAccount = require('../models/AdsAccount');
+const AdsToken = require('../models/AdsToken');
 
 class AuthService {
   // Get access token for a user and platform
@@ -27,8 +28,27 @@ class AuthService {
     }
   }
 
-  // Store or update access token
+  //Store or update access token for a user
   async storeAccessToken(userId, platform, tokenData) {
+    try {
+        // Create new token
+        return await AdsToken.upsert({
+          user_id: userId,
+          platform,
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token,
+          expiry_date: tokenData.expiry_date,
+          token_type: tokenData.token_type,
+          scope: tokenData.scope
+        });
+    } catch (error) {
+      throw error;
+    }
+  }   
+
+
+  // Store or update access token
+  async storeAdsAccessToken(userId, platform, tokenData) {
     try {
       const existingAccounts = await AdsAccount.findByUserAndPlatform(userId, platform);
       
