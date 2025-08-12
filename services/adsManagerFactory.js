@@ -30,6 +30,11 @@ class AdsManagerFactory {
     }
     return platform.toLowerCase();
   }
+
+  static platformHadAccounts(userId, platform) {
+    const availableAccounts = authService.userHasAccounts(userId, platform);
+    return availableAccounts;
+  }
 }
 
 module.exports = AdsManagerFactory;

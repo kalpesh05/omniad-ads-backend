@@ -56,7 +56,10 @@ class AdsAuthController {
                 expiry_date,
                 token_type,
                 scope
-            } = tokenData;
+            } = tokenData?.tokenData || {};
+            if (!access_token) {
+                return errorResponse(res, 'Access token not received from OAuth callback');
+            }
             // Save or update token in DB
             const savedToken = await AdsToken.upsert({
                 user_id: userId,
@@ -115,6 +118,21 @@ class AdsAuthController {
         } catch (error) {
             console.error('Refresh Tokens Error:', error);
             errorResponse(res, 'Failed to refresh tokens');
+        }
+    }
+
+    // endpoint to check if user has accounts for a platform
+    static async checkUserHasAccounts(req, res) {
+        try {
+            const userId = req.user.id;
+            const platform = req.params.platform;
+
+            const hasAccounts = await authenticator.userHasAccounts(userId, platform);
+
+            successResponse(res, { hasAccounts }, `User has accounts for ${platform}`);
+        } catch (error) {
+            console.error('Check User Accounts Error:', error);
+            errorResponse(res, 'Failed to check user accounts');
         }
     }
 }

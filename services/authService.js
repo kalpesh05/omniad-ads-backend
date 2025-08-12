@@ -56,6 +56,16 @@ class AuthService {
       throw error;
     }
   }
+  
+  // check if user has accounts for a platform
+  async userHasAccounts(userId, platform) { 
+    try {
+      const accounts = await AdsAccount.findByUserAndPlatform(userId, platform);
+      return accounts.length > 0;
+    } catch (error) {
+      throw error;
+    }
+  }               
 }
 
 module.exports = new AuthService();
