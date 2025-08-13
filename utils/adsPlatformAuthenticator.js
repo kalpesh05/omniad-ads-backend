@@ -2,6 +2,7 @@
 // Multi-Platform Advertisement Authentication System
 // Supports Google Ads, Facebook/Meta, Instagram, and YouTube
 const AdsToken = require('../models/AdsToken'); // Adjust the path as needed
+const Adsservice = require('../services/authService'); // Adjust the path as needed
 
 
 class AdPlatformAuthenticator {
@@ -73,7 +74,7 @@ class AdPlatformAuthenticator {
         tokenUrl: 'https://graph.facebook.com/v18.0/oauth/access_token'
       }
     };
-    
+
     this.authCases = {
       GOOGLE_ADS_ONLY: ['google'],
       FACEBOOK_ADS_ONLY: ['facebook'],
@@ -171,26 +172,31 @@ class AdPlatformAuthenticator {
 
       // Exchange code for access token
       const tokenData = await this.exchangeCodeForToken(platform, code);
-      
+
       // Add metadata for tracking
       tokenData.platform = platform;
       tokenData.obtained_at = new Date().toISOString();
       tokenData.user_id = userId;
-      
+
       // Calculate expiry timestamp if not provided
       if (tokenData.expires_in && !tokenData.expires_at) {
         const expiryDate = new Date(Date.now() + (tokenData.expires_in * 1000));
         tokenData.expires_at = expiryDate.toISOString();
       }
-      
+
       // Store tokens securely
-      await this.storeTokens(userId, platform, tokenData);
-      console.log(`Successfully authenticated ${platform} for user ${userId}`,tokenData);
+      let AdsToken = await this.storeTokens(userId, platform, tokenData);
+      console.log(`Successfully authenticated ${platform} for user ${userId}`, tokenData);
       // Get user info and permissions
       const userInfo = await this.getUserInfo(platform, tokenData.access_token);
       console.log("::: userInfo:", userInfo);
       const permissions = await this.getPermissions(platform, tokenData.access_token);
-      
+      // Check if tokenData has ads accounts
+      if (tokenData && tokenData.permissions && tokenData.permissions.totalAccounts > 0) {
+        for (const account of tokenData.permissions.adAccounts || []) {
+          await this.storeOrUpdateAccount(userId, tokenId, platform, account);
+        }
+      }
       return {
         success: true,
         platform,
@@ -218,7 +224,7 @@ class AdPlatformAuthenticator {
   // Exchange authorization code for access token
   async exchangeCodeForToken(platform, code) {
     const config = this.platforms[platform];
-    
+
     const params = {
       client_id: config.clientId,
       client_secret: config.clientSecret,
@@ -249,7 +255,7 @@ class AdPlatformAuthenticator {
       }
 
       const tokenData = await response.json();
-      
+
       if (tokenData.error) {
         throw new Error(`OAuth Error: ${tokenData.error_description || tokenData.error}`);
       }
@@ -282,7 +288,7 @@ class AdPlatformAuthenticator {
     for (let attempt = 1; attempt <= this.refreshConfig.maxRetries; attempt++) {
       try {
         console.log(`Refreshing ${platform} token for user ${userId} (attempt ${attempt})`);
-        
+
         const params = {
           client_id: config.clientId,
           client_secret: config.clientSecret,
@@ -316,41 +322,41 @@ class AdPlatformAuthenticator {
         }
 
         const tokenData = await response.json();
-        
+
         if (tokenData.error) {
           throw new Error(`Refresh Error: ${tokenData.error_description || tokenData.error}`);
         }
-        
+
         // Preserve refresh token if not provided in response
         if (!tokenData.refresh_token && storedTokens.refresh_token) {
           tokenData.refresh_token = storedTokens.refresh_token;
         }
-        
+
         // Add metadata for tracking
         tokenData.platform = platform;
         tokenData.refreshed_at = new Date().toISOString();
         tokenData.user_id = userId;
-        
+
         // Calculate new expiry timestamp
         if (tokenData.expires_in) {
           const expiryDate = new Date(Date.now() + (tokenData.expires_in * 1000));
           tokenData.expires_at = expiryDate.toISOString();
         }
-        
+
         await this.storeTokens(userId, platform, tokenData);
-        
+
         console.log(`Successfully refreshed ${platform} token for user ${userId}`);
         return tokenData;
-        
+
       } catch (error) {
         lastError = error;
         console.error(`Token refresh attempt ${attempt} failed:`, error.message);
-        
+
         // Don't retry on certain errors
         if (this.isNonRetryableError(error)) {
           break;
         }
-        
+
         // Wait before retry
         if (attempt < this.refreshConfig.maxRetries) {
           await this.delay(this.refreshConfig.retryDelay * attempt);
@@ -366,21 +372,19 @@ class AdPlatformAuthenticator {
   // Check if token needs refresh (refresh 10 minutes before expiry)
   isTokenExpiringSoon(tokenData, bufferMinutes = null) {
     const buffer = bufferMinutes || this.refreshConfig.bufferMinutes;
-    
     if (!tokenData.expires_at) {
       return true; // Assume needs refresh if no expiry info
     }
-    
+
     const expiryTime = new Date(tokenData.expires_at);
     const bufferTime = new Date(Date.now() + (buffer * 60 * 1000));
-    
     return expiryTime <= bufferTime;
   }
 
   // Get valid access token (refresh if needed)
   async getValidAccessToken(userId, platform) {
     const storedTokens = await this.getStoredTokens(userId, platform);
-    
+
     if (!storedTokens.access_token) {
       throw new Error('No access token found. User needs to re-authenticate.');
     }
@@ -412,16 +416,16 @@ class AdPlatformAuthenticator {
     for (const platform of platforms) {
       try {
         const storedTokens = await this.getStoredTokens(userId, platform);
-        
+
         if (!storedTokens.access_token) {
           continue; // Skip if no token exists
         }
-        
+
         if (this.isTokenExpiringSoon(storedTokens)) {
           results[platform] = await this.refreshToken(userId, platform);
         } else {
-          results[platform] = { 
-            status: 'still_valid', 
+          results[platform] = {
+            status: 'still_valid',
             expires_at: storedTokens.expires_at,
             access_token: storedTokens.access_token
           };
@@ -464,7 +468,7 @@ class AdPlatformAuthenticator {
     if (!response.ok) {
       throw new Error(`Google user info failed: ${response.status}`);
     }
-    
+
     return await response.json();
   }
 
@@ -472,11 +476,11 @@ class AdPlatformAuthenticator {
     const response = await fetch(
       `https://graph.facebook.com/me?access_token=${accessToken}&fields=id,name,email,picture`
     );
-    
+
     if (!response.ok) {
       throw new Error(`Facebook user info failed: ${response.status}`);
     }
-    
+
     return await response.json();
   }
 
@@ -504,18 +508,18 @@ class AdPlatformAuthenticator {
       const response = await fetch(
         'https://googleads.googleapis.com/v16/customers:listAccessibleCustomers',
         {
-          headers: { 
+          headers: {
             Authorization: `Bearer ${accessToken}`,
             'developer-token': process.env.GOOGLE_ADS_DEVELOPER_TOKEN || ''
           }
         }
       );
-      console.log("::: response:", response) 
-      
+      console.log("::: response:", response)
+
       if (!response.ok) {
         const errorText = await response.text();
         console.log("::: error response:", errorText);
-        
+
         // Handle specific case where user has no ad accounts
         if ([400, 403, 404].includes(response.status)) {
           console.log("User may not have any ad accounts or proper permissions");
@@ -526,10 +530,10 @@ class AdPlatformAuthenticator {
             message: "No ad accounts found or insufficient permissions"
           };
         }
-        
+
         throw new Error(`Google Ads API failed: ${response.status} ${errorText}`);
       }
-      
+
       const data = await response.json();
       return {
         adAccounts: data.resourceNames || [],
@@ -537,13 +541,13 @@ class AdPlatformAuthenticator {
         totalAccounts: data.resourceNames?.length || 0
       };
     } catch (error) {
-      console.log("<=======>" ,process.env.GOOGLE_ADS_DEVELOPER_TOKEN );
+      console.log("<=======>", process.env.GOOGLE_ADS_DEVELOPER_TOKEN);
       console.error('Error fetching Google ad accounts:', error);
-      
+
       // Return successful response with empty accounts instead of error
-      return { 
-        adAccounts: [], 
-        hasYouTubeAccess: true, 
+      return {
+        adAccounts: [],
+        hasYouTubeAccess: true,
         totalAccounts: 0,
         message: error.message.includes('failed:') ? "No ad accounts accessible" : error.message
       };
@@ -556,7 +560,7 @@ class AdPlatformAuthenticator {
         fetch(`https://graph.facebook.com/v18.0/me/adaccounts?access_token=${accessToken}&fields=id,name,account_status`),
         fetch(`https://graph.facebook.com/v18.0/me/accounts?access_token=${accessToken}&fields=id,name,instagram_business_account`)
       ]);
-      
+
       // Handle ad accounts response
       let adAccountsData = { data: [] };
       if (adAccountsResponse.ok) {
@@ -564,13 +568,13 @@ class AdPlatformAuthenticator {
       } else {
         const errorText = await adAccountsResponse.text();
         console.log("Ad accounts API error:", adAccountsResponse.status, errorText);
-        
+
         // Handle specific cases where user has no ad accounts
         if (adAccountsResponse.status === 400 || adAccountsResponse.status === 403 || adAccountsResponse.status === 404) {
           console.log("User may not have any Facebook ad accounts or proper permissions");
         }
       }
-      
+
       // Handle Instagram response
       let igData = { data: [] };
       if (igResponse.ok) {
@@ -579,9 +583,9 @@ class AdPlatformAuthenticator {
         const errorText = await igResponse.text();
         console.log("Instagram accounts API error:", igResponse.status, errorText);
       }
-      
+
       const instagramAccounts = igData.data?.filter(page => page.instagram_business_account) || [];
-      
+
       return {
         adAccounts: adAccountsData.data || [],
         instagramAccounts,
@@ -592,13 +596,13 @@ class AdPlatformAuthenticator {
       };
     } catch (error) {
       console.error('Error fetching Facebook ad accounts:', error);
-      return { 
-        adAccounts: [], 
-        instagramAccounts: [], 
+      return {
+        adAccounts: [],
+        instagramAccounts: [],
         hasInstagramAccess: false,
         totalAdAccounts: 0,
         totalInstagramAccounts: 0,
-        message: error.message 
+        message: error.message
       };
     }
   }
@@ -624,11 +628,11 @@ class AdPlatformAuthenticator {
       if (stateUserId != userId) {
         return false;
       }
-      
+
       // Check timestamp (reject if older than 10 minutes)
       const stateTime = parseInt(timestamp);
       const tenMinutesAgo = Date.now() - (10 * 60 * 1000);
-      
+
       return stateTime > tenMinutesAgo;
     } catch {
       return false;
@@ -639,13 +643,13 @@ class AdPlatformAuthenticator {
   isNonRetryableError(error) {
     const nonRetryableMessages = [
       'invalid_grant',
-      'invalid_client', 
+      'invalid_client',
       'unauthorized_client',
       'invalid_refresh_token',
       'refresh_token_expired'
     ];
-    
-    return nonRetryableMessages.some(msg => 
+
+    return nonRetryableMessages.some(msg =>
       error.message.toLowerCase().includes(msg.toLowerCase())
     );
   }
@@ -661,58 +665,103 @@ class AdPlatformAuthenticator {
 
   // Store tokens securely
   async storeTokens(userId, platform, tokenData) {
-    // Implement secure token storage
-    // Example: database, encrypted storage, etc.
     console.log(`Storing tokens for user ${userId} on platform ${platform}`);
-    
-    // Add expiration timestamp if not present
+
+    // Add expiration timestamp if missing
     if (tokenData.expires_in && !tokenData.expires_at) {
-      tokenData.expires_at = new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString();
+      tokenData.expires_at = new Date(Date.now() + tokenData.expires_in * 1000).toISOString();
     }
-    
+
     // Store last refresh time
     tokenData.last_refreshed = new Date().toISOString();
-    
-    // TODO: Implement actual storage logic
-    /*
-    await db.upsert('user_tokens', {
+
+    // 1️⃣ Upsert into ads_tokens
+    const tokenRecord = await AdsToken.upsert({
       user_id: userId,
-      platform: platform,
-      access_token: encrypt(tokenData.access_token),
-      refresh_token: tokenData.refresh_token ? encrypt(tokenData.refresh_token) : null,
-      expires_at: tokenData.expires_at,
-      last_refreshed: tokenData.last_refreshed,
-      token_data: encrypt(JSON.stringify(tokenData))
+      platform,
+      access_token: tokenData.access_token,
+      refresh_token: tokenData.refresh_token || null,
+      expiry_date: tokenData.expires_at ? new Date(tokenData.expires_at).toISOString() : null,
+      token_type: tokenData.token_type || 'Bearer',
+      scope: tokenData.scope || '',
+      last_refreshed: tokenData.last_refreshed
     });
-    */
+
+    // 2️⃣ If accounts were fetched during authentication, store them in ads_accounts
+    if (tokenData.accounts && Array.isArray(tokenData.accounts) && tokenData.accounts.length > 0) {
+      for (const acc of tokenData.accounts) {
+        await AdsAccount.upsert({
+          token_id: tokenRecord.id, // FK to ads_tokens
+          account_id: acc.account_id,
+          account_name: acc.account_name,
+          currency: acc.currency || null,
+          status: acc.status || null,
+          is_active: true
+        });
+      }
+    }
+
+    return tokenRecord;
+  }
+
+  // Store or update ad account
+  async storeOrUpdateAccount(userId, tokenId, platform, accountData) {
+    console.log(`Storing/updating ad account for user ${userId} on platform ${platform}`);
+    try {
+      const existingAccount = await AdsAccount.findOne({
+        where: {
+          token_id: tokenId,
+          account_id: accountData.account_id
+        }
+      });
+      if (existingAccount) {
+        return await existingAccount.update({
+          account_name: accountData.account_name,
+          currency: accountData.currency || null,
+          status: accountData.status || null,
+          is_active: true
+        });
+      } else {
+        return await AdsAccount.create({
+          token_id: tokenId,
+          account_id: accountData.account_id,
+          account_name: accountData.account_name,
+          currency: accountData.currency || null,
+          status: accountData.status || null,
+          is_active: true
+        });
+      }
+    } catch (error) {
+      console.error(`Error storing/updating ad account for user ${userId} on platform ${platform}:`, error);
+      throw new Error(`Failed to store ad account: ${error.message}`);
+    }
   }
 
   // Get stored tokens
   async getStoredTokens(userId, platform) {
     // Implement token retrieval
     console.log(`Retrieving tokens for user ${userId} on platform ${platform}`);
-    
+
     // TODO: Implement actual retrieval logic
-    
-    const tokenRecord = await AdsToken.findByUserAndPlatform(userId , platform);
-    console.log("::: tokenRecord:", tokenRecord);
+
+    const tokenRecord = await AdsToken.findByUserAndPlatform(userId, platform);
     if (!tokenRecord) return {};
-    
+
     return {
       access_token: tokenRecord.access_token,
       refresh_token: tokenRecord.refresh_token ? tokenRecord.refresh_token : null,
-      expires_at: tokenRecord.expires_at,
+      expires_at: tokenRecord.expiry_date ? new Date(tokenRecord.expiry_date).toISOString() : null,
       last_refreshed: tokenRecord.last_refreshed
     };
-    
-    
+
+
     return {}; // Return empty object if no tokens found
   }
 
   // Mark user for re-authentication
   async markForReauth(userId, platform) {
     console.log(`Marking user ${userId} for re-authentication on ${platform}`);
-    
+
     // TODO: Implement marking mechanism
     /*
     await db.update('user_tokens', 
@@ -741,14 +790,14 @@ class AdPlatformAuthenticator {
       needs_reauth: { $ne: true }
     });
     */
-    
+
     return []; // Return empty array for now
   }
 
   // Update user's auto-refresh preference
   async updateAutoRefreshSetting(userId, enabled, platforms = null) {
     console.log(`Setting auto-refresh for user ${userId}: ${enabled}`);
-    
+
     // TODO: Store user preference for automatic token refresh
     /*
     await db.upsert('user_auth_settings', {
@@ -773,10 +822,10 @@ class AdPlatformAuthenticator {
       platforms: Object.keys(this.platforms)
     };
     */
-    
-    return { 
-      enabled: true, 
-      platforms: Object.keys(this.platforms) 
+
+    return {
+      enabled: true,
+      platforms: Object.keys(this.platforms)
     };
   }
 
@@ -798,7 +847,7 @@ class AdPlatformAuthenticator {
       authStatus[platform] = {
         hasToken: !!tokens.access_token,
         hasRefreshToken: !!tokens.refresh_token,
-        expiresAt: tokens.expires_at,
+        expiresAt: tokens.expires_date ? new Date(tokens.expires_date).toISOString() : null,
         needsRefresh: tokens.access_token ? this.isTokenExpiringSoon(tokens) : false
       };
     }
@@ -825,7 +874,7 @@ class AdPlatformAuthenticator {
       platformStatus[platform] = {
         isAuthenticated: !!tokens.access_token,
         hasRefreshToken: !!tokens.refresh_token,
-        expiresAt: tokens.expires_at,
+        expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date).toISOString() : null,
         needsRefresh: tokens.access_token ? this.isTokenExpiringSoon(tokens) : false,
         lastRefreshed: tokens.last_refreshed
       };

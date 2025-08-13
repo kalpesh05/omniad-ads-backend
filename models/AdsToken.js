@@ -10,23 +10,45 @@ class AdsToken {
     this.expiry_date = data.expiry_date;
     this.token_type = data.token_type;
     this.scope = data.scope;
+    this.last_refreshed = data.last_refreshed;
     this.created_at = data.created_at;
     this.updated_at = data.updated_at;
   }
 
   // Create or update token for user & platform
-  static async upsert({ user_id, platform, access_token, refresh_token, expiry_date, token_type, scope }) {
+  static async upsert({
+    user_id,
+    platform,
+    access_token,
+    refresh_token,
+    expiry_date,
+    token_type,
+    scope,
+    last_refreshed = new Date()
+  }) {
     const [result] = await pool.execute(`
-      INSERT INTO ads_tokens (user_id, platform, access_token, refresh_token, expiry_date, token_type, scope)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO ads_tokens (
+        user_id, platform, access_token, refresh_token, expiry_date, token_type, scope, last_refreshed
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE 
         access_token = VALUES(access_token),
         refresh_token = VALUES(refresh_token),
         expiry_date = VALUES(expiry_date),
         token_type = VALUES(token_type),
         scope = VALUES(scope),
+        last_refreshed = VALUES(last_refreshed),
         updated_at = CURRENT_TIMESTAMP
-    `, [user_id, platform, access_token, refresh_token, expiry_date, token_type, scope]);
+    `, [
+      user_id,
+      platform,
+      access_token,
+      refresh_token,
+      expiry_date,
+      token_type,
+      scope,
+      last_refreshed
+    ]);
 
     return await AdsToken.findByUserAndPlatform(user_id, platform);
   }
@@ -37,7 +59,6 @@ class AdsToken {
       'SELECT * FROM ads_tokens WHERE user_id = ? AND platform = ?',
       [user_id, platform]
     );
-
     return rows.length > 0 ? new AdsToken(rows[0]) : null;
   }
 
@@ -49,7 +70,7 @@ class AdsToken {
     );
   }
 
-  // Delete all tokens for user
+  // Delete all tokens for a user
   static async deleteByUserId(user_id) {
     await pool.execute(
       'DELETE FROM ads_tokens WHERE user_id = ?',
@@ -68,6 +89,7 @@ class AdsToken {
       expiry_date: this.expiry_date,
       token_type: this.token_type,
       scope: this.scope,
+      last_refreshed: this.last_refreshed,
       created_at: this.created_at,
       updated_at: this.updated_at
     };

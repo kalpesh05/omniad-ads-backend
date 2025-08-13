@@ -105,9 +105,10 @@ const initializeDatabase = async () => {
           platform VARCHAR(50) NOT NULL,         
           access_token TEXT NOT NULL,
           refresh_token TEXT,
-          expiry_date BIGINT,                    
+          expiry_date TIMESTAMP ,                    
           token_type VARCHAR(50),               
           scope TEXT,                           
+          last_refreshed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
@@ -118,20 +119,16 @@ const initializeDatabase = async () => {
     await promisePool.execute(`
       CREATE TABLE IF NOT EXISTS ads_accounts (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NOT NULL,
-        platform ENUM('facebook', 'google') NOT NULL,
+        token_id BIGINT NOT NULL,
         account_id VARCHAR(255) NOT NULL,
         account_name VARCHAR(255) NOT NULL,
-        access_token TEXT NOT NULL,
-        refresh_token TEXT,
-        token_expires_at DATETIME,
+        currency VARCHAR(10)
+        status VARCHAR(50)
         is_active BOOLEAN DEFAULT true,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        INDEX idx_user_platform (user_id, platform),
-        INDEX idx_account_id (account_id),
-        INDEX idx_platform (platform)
+        FOREIGN KEY (token_id) REFERENCES ads_tokens(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_account_per_token (token_id, account_id)
       )
     `);
 
