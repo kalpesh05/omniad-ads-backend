@@ -7,6 +7,7 @@ const {
     notFoundResponse
 } = require('../utils/response');
 const AdsToken = require('../models/AdsToken'); // Adjust the path as needed
+const Adsservice = require('../services/authService'); // Adjust the path as needed
 
 const authenticator = new AdPlatformAuthenticator();
 
@@ -49,6 +50,7 @@ class AdsAuthController {
             const userId = req.user.id;
 
             const tokenData = await authenticator.handleCallback(platform, code, state, userId);
+
             // Destructure relevant fields
             const {
                 access_token,
@@ -56,17 +58,14 @@ class AdsAuthController {
                 expiry_date,
                 token_type,
                 scope
-            } = tokenData;
+            } = tokenData?.tokenData || {};
+            if (!access_token) {
+                return errorResponse(res, 'Access token not received from OAuth callback');
+            }
+           
             // Save or update token in DB
-            const savedToken = await AdsToken.upsert({
-                user_id: userId,
-                platform,
-                access_token,
-                refresh_token,
-                expiry_date,
-                token_type,
-                scope
-            });
+            const savedToken = await AdsToken.fetchTokens(userId, platform);
+
             successResponse(res, savedToken.toJSON(), `${platform} account authenticated successfully`);
         } catch (error) {
             console.error('OAuth Callback Error:', error);
@@ -115,6 +114,21 @@ class AdsAuthController {
         } catch (error) {
             console.error('Refresh Tokens Error:', error);
             errorResponse(res, 'Failed to refresh tokens');
+        }
+    }
+
+    // endpoint to check if user has accounts for a platform
+    static async checkUserHasAccounts(req, res) {
+        try {
+            const userId = req.user.id;
+            const platform = req.params.platform;
+
+            const hasAccounts = await authenticator.userHasAccounts(userId, platform);
+
+            successResponse(res, { hasAccounts }, `User has accounts for ${platform}`);
+        } catch (error) {
+            console.error('Check User Accounts Error:', error);
+            errorResponse(res, 'Failed to check user accounts');
         }
     }
 }
