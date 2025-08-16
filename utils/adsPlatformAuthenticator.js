@@ -2,13 +2,14 @@
 // Multi-Platform Advertisement Authentication System
 // Supports Google Ads, Facebook/Meta, Instagram, and YouTube
 const AdsToken = require('../models/AdsToken'); // Adjust the path as needed
+const AdsAccount = require('../models/AdsAccount'); // Adjust the path as needed
 const Adsservice = require('../services/authService'); // Adjust the path as needed
 
 
 class AdPlatformAuthenticator {
   constructor() {
     this.platforms = {
-      google: {
+      googleads: {
         clientId: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         redirectUri: process.env.GOOGLE_REDIRECT_URI,
@@ -17,10 +18,34 @@ class AdPlatformAuthenticator {
           "email",
           "profile",
           'https://www.googleapis.com/auth/adwords',
-          'https://www.googleapis.com/auth/youtube',
-          'https://www.googleapis.com/auth/youtube.readonly',
+        ],
+        authUrl: 'https://accounts.google.com/o/oauth2/auth',
+        tokenUrl: 'https://oauth2.googleapis.com/token'
+      },
+      analytics: {
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        redirectUri: process.env.GOOGLE_REDIRECT_URI,
+        scopes: [
+          "openid",
+          "email",
+          "profile",
           'https://www.googleapis.com/auth/analytics',
           'https://www.googleapis.com/auth/analytics.readonly'
+        ],
+        authUrl: 'https://accounts.google.com/o/oauth2/auth',
+        tokenUrl: 'https://oauth2.googleapis.com/token'
+      },
+      youtube: {
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        redirectUri: process.env.GOOGLE_REDIRECT_URI,
+        scopes: [
+          "openid",
+          "email",
+          "profile",
+          'https://www.googleapis.com/auth/youtube',
+          'https://www.googleapis.com/auth/youtube.readonly',
         ],
         authUrl: 'https://accounts.google.com/o/oauth2/auth',
         tokenUrl: 'https://oauth2.googleapis.com/token'
@@ -76,13 +101,14 @@ class AdPlatformAuthenticator {
     };
 
     this.authCases = {
-      GOOGLE_ADS_ONLY: ['google'],
+      GOOGLE_ANALYTICS_ONLY: ['analytics'],
+      GOOGLE_ADS_ONLY: ['googleads'],
       FACEBOOK_ADS_ONLY: ['facebook'],
       INSTAGRAM_ADS_ONLY: ['instagram'],
-      YOUTUBE_ADS_ONLY: ['google'], // YouTube ads managed through Google
+      YOUTUBE_ADS_ONLY: ['youtube'], // YouTube ads managed through Google
       SOCIAL_MEDIA_SUITE: ['facebook', 'instagram', 'google'],
       ALL_PLATFORMS: ['google', 'facebook', 'instagram'],
-      GOOGLE_ECOSYSTEM: ['google'],
+      GOOGLE_ECOSYSTEM: ['googleads', 'youtube', 'analytics'],
       META_ECOSYSTEM: ['facebook', 'instagram'],
       SEARCH_ONLY: ['google'],
       SOCIAL_ONLY: ['facebook', 'instagram'],
@@ -189,12 +215,12 @@ class AdPlatformAuthenticator {
       console.log(`Successfully authenticated ${platform} for user ${userId}`, tokenData);
       // Get user info and permissions
       const userInfo = await this.getUserInfo(platform, tokenData.access_token);
-      console.log("::: userInfo:", userInfo);
       const permissions = await this.getPermissions(platform, tokenData.access_token);
+      console.log("::: permissions:", permissions);
       // Check if tokenData has ads accounts
-      if (tokenData && tokenData.permissions && tokenData.permissions.totalAccounts > 0) {
-        for (const account of tokenData.permissions.adAccounts || []) {
-          await this.storeOrUpdateAccount(userId, tokenId, platform, account);
+      if (permissions && permissions.adAccounts.length > 0 && permissions.totalAccounts > 0) {
+        for (const account of permissions.adAccounts || []) {
+          await this.storeOrUpdateAccount(userId, AdsToken.id, platform, account);
         }
       }
       return {
@@ -447,6 +473,7 @@ class AdPlatformAuthenticator {
     try {
       switch (platform) {
         case 'google':
+        case 'googleads':
           return await this.getGoogleUserInfo(accessToken);
         case 'facebook':
         case 'meta':
@@ -489,6 +516,7 @@ class AdPlatformAuthenticator {
     try {
       switch (platform) {
         case 'google':
+        case 'googleads':
           return await this.getGoogleAdAccounts(accessToken);
         case 'facebook':
         case 'meta':
@@ -504,55 +532,296 @@ class AdPlatformAuthenticator {
   }
 
   async getGoogleAdAccounts(accessToken) {
-    try {
-      const response = await fetch(
-        'https://googleads.googleapis.com/v16/customers:listAccessibleCustomers',
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'developer-token': process.env.GOOGLE_ADS_DEVELOPER_TOKEN || ''
-          }
+  try {
+    // First, get accessible customers
+    const response = await fetch(
+      'https://googleads.googleapis.com/v19/customers:listAccessibleCustomers',
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'developer-token': process.env.GOOGLE_ADS_DEVELOPER_TOKEN || ''
         }
-      );
-      console.log("::: response:", response)
+      }
+    );
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.log("::: error response:", errorText);
+    console.log("::: listAccessibleCustomers response:", response);
 
-        // Handle specific case where user has no ad accounts
-        if ([400, 403, 404].includes(response.status)) {
-          console.log("User may not have any ad accounts or proper permissions");
-          return {
-            adAccounts: [],
-            hasYouTubeAccess: true,
-            totalAccounts: 0,
-            message: "No ad accounts found or insufficient permissions"
-          };
-        }
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.log("::: error response:", errorText);
 
-        throw new Error(`Google Ads API failed: ${response.status} ${errorText}`);
+      // Handle specific case where user has no ad accounts
+      if ([400, 403, 404].includes(response.status)) {
+        console.log("User may not have any ad accounts or proper permissions");
+        return {
+          adAccounts: [],
+          hasYouTubeAccess: true,
+          totalAccounts: 0,
+          message: "No ad accounts found or insufficient permissions"
+        };
       }
 
-      const data = await response.json();
-      return {
-        adAccounts: data.resourceNames || [],
-        hasYouTubeAccess: true,
-        totalAccounts: data.resourceNames?.length || 0
-      };
-    } catch (error) {
-      console.log("<=======>", process.env.GOOGLE_ADS_DEVELOPER_TOKEN);
-      console.error('Error fetching Google ad accounts:', error);
+      throw new Error(`Google Ads API failed: ${response.status} ${errorText}`);
+    }
 
-      // Return successful response with empty accounts instead of error
+    const data = await response.json();
+    const resourceNames = data.resourceNames || [];
+
+    if (resourceNames.length === 0) {
       return {
         adAccounts: [],
         hasYouTubeAccess: true,
         totalAccounts: 0,
-        message: error.message.includes('failed:') ? "No ad accounts accessible" : error.message
+        message: "No accessible ad accounts found"
       };
     }
+
+    // Extract customer IDs and fetch detailed information for each
+    const accountDetails = await Promise.allSettled(
+      resourceNames.map(async (resourceName) => {
+        const customerId = resourceName.split('/')[1];
+        
+        try {
+          const customerResponse = await fetch(
+            `https://googleads.googleapis.com/v19/customers/${customerId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'developer-token': process.env.GOOGLE_ADS_DEVELOPER_TOKEN || ''
+              }
+            }
+          );
+
+          if (!customerResponse.ok) {
+            console.log(`Failed to fetch details for customer ${customerId}:`, customerResponse.status);
+            // Return basic info if detailed fetch fails
+            return {
+              accoubt_id: customerId,
+              account_name: `Customer ${customerId}`,
+              resourceName: resourceName,
+              status: 'unknown'
+            };
+          }
+
+          const customerData = await customerResponse.json();
+          return {
+            account_id: customerId,
+            account_name: customerData.descriptiveName || `Customer ${customerId}`,
+            resourceName: resourceName,
+            status: customerData.status || 'UNKNOWN',
+            currency: customerData.currencyCode || 'USD',
+            timeZone: customerData.timeZone || 'UTC',
+            manager: customerData.manager || false
+          };
+        } catch (error) {
+          console.error(`Error fetching customer ${customerId}:`, error);
+          // Return basic info if there's an error
+          return {
+            account_id: customerId,
+            account_name: `Customer ${customerId}`,
+            resourceName: resourceName,
+            status: 'ERROR',
+            currency: 'USD',
+            timeZone: 'UTC',
+            manager: false
+          };
+        }
+      })
+    );
+
+    // Filter successful results and handle any failures gracefully
+    const adAccounts = accountDetails
+      .filter(result => result.status === 'fulfilled')
+      .map(result => result.value);
+
+    const failedCount = accountDetails.filter(result => result.status === 'rejected').length;
+    if (failedCount > 0) {
+      console.log(`Warning: Failed to fetch details for ${failedCount} accounts`);
+    }
+
+    return {
+      adAccounts,
+      hasYouTubeAccess: true,
+      totalAccounts: adAccounts.length,
+      message: failedCount > 0 ? `Retrieved ${adAccounts.length} accounts (${failedCount} failed)` : undefined
+    };
+
+  } catch (error) {
+    console.log("<=======>", process.env.GOOGLE_ADS_DEVELOPER_TOKEN);
+    console.error('Error fetching Google ad accounts:', error);
+
+    // Return successful response with empty accounts instead of error
+    return {
+      adAccounts: [],
+      hasYouTubeAccess: true,
+      totalAccounts: 0,
+      message: error.message.includes('failed:') ? "No ad accounts accessible" : error.message
+    };
   }
+}
+/*async getGoogleAdAccounts(accessToken) {
+  try {
+    // --- Step 1: Get accessible customers (Your existing code for this is correct) ---
+    const listResponse = await fetch(
+      'https://googleads.googleapis.com/v19/customers:listAccessibleCustomers',
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'developer-token': process.env.GOOGLE_ADS_DEVELOPER_TOKEN || ''
+        }
+      }
+    );
+
+    console.log("::: listAccessibleCustomers response status:", listResponse.status);
+
+    if (!listResponse.ok) {
+      const errorText = await listResponse.text();
+      console.error("::: Error response from listAccessibleCustomers:", errorText);
+
+      if ([400, 403, 404].includes(listResponse.status)) {
+        console.log("User may not have any ad accounts or proper permissions for listAccessibleCustomers");
+        return {
+          adAccounts: [],
+          hasYouTubeAccess: true, // Assuming YouTube access is separate check or not relevant here
+          totalAccounts: 0,
+          message: "No ad accounts found or insufficient permissions for Google Ads API"
+        };
+      }
+      throw new Error(`Google Ads API (listAccessibleCustomers) failed: ${listResponse.status} ${errorText}`);
+    }
+
+    const listData = await listResponse.json();
+    const resourceNames = listData.resourceNames || [];
+console.log("::: Accessible resource names:", resourceNames);
+    if (resourceNames.length === 0) {
+      return {
+        adAccounts: [],
+        hasYouTubeAccess: true,
+        totalAccounts: 0,
+        message: "No accessible ad accounts found"
+      };
+    }
+
+    // Extract customer IDs
+    const customerIds = resourceNames.map(name => name.split('/')[1]);
+
+    // --- Step 2: Fetch detailed information for all accessible customers using GAQL ---
+    // You'll need to make a separate GAQL query for EACH customer ID
+    // if you want to get details for ALL of them.
+    // The GAQL search is performed FOR a specific customer ID (the one acting as the "login customer")
+    // or if it's a manager account, it can query its direct client accounts.
+
+    const adAccounts = [];
+    const failedAccountFetches = [];
+
+    for (const customerId of customerIds) {
+      try {
+        // The GoogleAdsService.SearchStream endpoint requires a POST request
+        // and the query in the request body.
+        const gaqlQuery = `
+          SELECT
+            customer.id,
+            customer.descriptive_name,
+            customer.currency_code,
+            customer.time_zone,
+            customer.manager_customer,
+            customer.test_account,
+            customer.resource_name
+          FROM customer
+          WHERE customer.id = ${customerId}
+        `;
+
+        const gaqlResponse = await fetch(
+          `https://googleads.googleapis.com/v19/customers/${customerId}/googleAds:searchStream`, // Important: Call searchStream ON the customer
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'developer-token': process.env.GOOGLE_ADS_DEVELOPER_TOKEN || '',
+              'Content-Type': 'application/json',
+              'login-customer-id': customerId // Crucial: You need to specify the login-customer-id header
+                                            // when querying an individual account.
+                                            // If this was a manager account querying its clients,
+                                            // the login-customer-id would be the manager account's ID.
+            },
+            body: JSON.stringify({
+              query: gaqlQuery
+            })
+          }
+        );
+
+        console.log(`::: GAQL searchStream response for ${customerId} status:`, gaqlResponse.status);
+
+        if (!gaqlResponse.ok) {
+          const errorText = await gaqlResponse.text();
+          console.error(`Error fetching details for customer ${customerId} via GAQL:`, errorText);
+          failedAccountFetches.push({
+            id: customerId,
+            reason: `API Error: ${gaqlResponse.status} ${errorText}`
+          });
+          continue; // Skip to the next customer
+        }
+
+        // The searchStream returns a stream of batches.
+        // For 'customer' resource, a single customer object is expected per stream.
+        const gaqlData = await gaqlResponse.json();
+        
+        // The structure for searchStream is an array of objects, where each object
+        // contains a 'results' array.
+        // For querying 'customer' directly, you usually get one result per batch.
+        if (gaqlData && gaqlData.length > 0 && gaqlData[0].results && gaqlData[0].results.length > 0) {
+          const customer = gaqlData[0].results[0].customer; // Extract the customer object
+
+          adAccounts.push({
+            account_id: customer.id,
+            account_name: customer.descriptiveName || `Customer ${customer.id}`,
+            resourceName: customer.resourceName,
+            status: 'ENABLED', // Customer resource doesn't have a direct 'status', assume enabled if we can fetch it
+            currency: customer.currencyCode || 'USD',
+            timeZone: customer.timeZone || 'UTC',
+            manager: customer.managerCustomer || false, // Renamed from customer.manager to customer.manager_customer in GAQL
+            testAccount: customer.testAccount || false // Check if it's a test account
+          });
+        } else {
+             console.warn(`No customer details found in GAQL response for ${customerId}`);
+             failedAccountFetches.push({
+                 id: customerId,
+                 reason: 'No results in GAQL response'
+             });
+        }
+
+      } catch (error) {
+        console.error(`Error processing GAQL fetch for customer ${customerId}:`, error);
+        failedAccountFetches.push({
+          id: customerId,
+          reason: `Client-side error: ${error.message}`
+        });
+      }
+    }
+
+    return {
+      adAccounts,
+      hasYouTubeAccess: true, // Placeholder
+      totalAccounts: adAccounts.length,
+      message: failedAccountFetches.length > 0
+        ? `Retrieved ${adAccounts.length} accounts (${failedAccountFetches.length} failed to fetch details)`
+        : undefined
+    };
+
+  } catch (error) {
+    console.log("<=======> Developer Token Debug:", process.env.GOOGLE_ADS_DEVELOPER_TOKEN);
+    console.error('Final Error fetching Google ad accounts:', error);
+
+    // Return successful response with empty accounts instead of error
+    return {
+      adAccounts: [],
+      hasYouTubeAccess: true,
+      totalAccounts: 0,
+      message: error.message.includes('failed:') ? "No ad accounts accessible" : error.message
+    };
+  }
+}
+*/
 
   async getFacebookAdAccounts(accessToken) {
     try {
@@ -746,7 +1015,6 @@ class AdPlatformAuthenticator {
 
     const tokenRecord = await AdsToken.findByUserAndPlatform(userId, platform);
     if (!tokenRecord) return {};
-
     return {
       access_token: tokenRecord.access_token,
       refresh_token: tokenRecord.refresh_token ? tokenRecord.refresh_token : null,

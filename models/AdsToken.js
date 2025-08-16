@@ -70,6 +70,18 @@ class AdsToken {
     );
   }
 
+  // Fetch tokens for a user
+  static async fetchTokens(user_id, platform = null) {
+    let query = 'SELECT * FROM ads_tokens WHERE user_id = ?';
+    const params = [user_id];
+    if (platform) {
+      query += ' AND platform = ?';
+      params.push(platform);
+    }
+    const [rows] = await pool.execute(query, params);
+    return rows.length > 0 ? new AdsToken(rows[0]) : null;
+  } 
+
   // Delete all tokens for a user
   static async deleteByUserId(user_id) {
     await pool.execute(

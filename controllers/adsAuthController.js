@@ -65,7 +65,7 @@ class AdsAuthController {
            
             // Save or update token in DB
             const savedToken = await AdsToken.fetchTokens(userId, platform);
-
+console.log('Saved Token:', savedToken);
             successResponse(res, savedToken.toJSON(), `${platform} account authenticated successfully`);
         } catch (error) {
             console.error('OAuth Callback Error:', error);

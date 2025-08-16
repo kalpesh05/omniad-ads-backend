@@ -119,11 +119,11 @@ const initializeDatabase = async () => {
     await promisePool.execute(`
       CREATE TABLE IF NOT EXISTS ads_accounts (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        token_id BIGINT NOT NULL,
+        token_id INT NOT NULL,
         account_id VARCHAR(255) NOT NULL,
         account_name VARCHAR(255) NOT NULL,
-        currency VARCHAR(10)
-        status VARCHAR(50)
+        currency VARCHAR(10),
+        status VARCHAR(50),
         is_active BOOLEAN DEFAULT true,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -131,6 +131,92 @@ const initializeDatabase = async () => {
         UNIQUE KEY unique_account_per_token (token_id, account_id)
       )
     `);
+    // Create ads_campaigns table
+    await promisePool.execute(`
+      CREATE TABLE IF NOT EXISTS ads_campaigns (  
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        account_id INT NOT NULL,
+        campaign_id VARCHAR(255) NOT NULL,  
+        campaign_name VARCHAR(255) NOT NULL,
+        status VARCHAR(50),
+        objective VARCHAR(100), 
+        budget DECIMAL(10, 2),
+        start_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        end_date  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (account_id) REFERENCES ads_accounts(id) ON DELETE CASCADE,         
+        UNIQUE KEY unique_campaign_per_account (account_id, campaign_id)
+      )
+    `);
+    // Create ads_creatives table
+    await promisePool.execute(`
+      CREATE TABLE IF NOT EXISTS ads_creatives (  
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        campaign_id INT NOT NULL,
+        creative_id VARCHAR(255) NOT NULL,  
+        creative_name VARCHAR(255) NOT NULL,  
+        type ENUM('image', 'video', 'carousel') NOT NULL,
+        status VARCHAR(50),
+        content TEXT, 
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (campaign_id) REFERENCES ads_campaigns(id) ON DELETE CASCADE,         
+        UNIQUE KEY unique_creative_per_campaign (campaign_id, creative_id)
+      )
+    `);
+    // Create ads_insights table
+    await promisePool.execute(`
+      CREATE TABLE IF NOT EXISTS ads_insights (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        campaign_id INT NOT NULL,
+        date DATE NOT NULL,
+        impressions INT DEFAULT 0,  
+        clicks INT DEFAULT 0,
+        spend DECIMAL(10, 2) DEFAULT 0.00,
+        conversions INT DEFAULT 0,
+        revenue DECIMAL(10, 2) DEFAULT 0.00,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, 
+        FOREIGN KEY (campaign_id) REFERENCES ads_campaigns(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_insight_per_campaign_date (campaign_id, date)
+      )
+    `);
+    // Create ads_platforms table
+    await promisePool.execute(`
+      CREATE TABLE IF NOT EXISTS ads_platforms (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        platform_name VARCHAR(50) NOT NULL UNIQUE,
+        api_url VARCHAR(255) NOT NULL,
+        auth_url VARCHAR(255) NOT NULL,
+        token_url VARCHAR(255) NOT NULL,
+        client_id VARCHAR(255) NOT NULL,  
+        client_secret VARCHAR(255) NOT NULL,
+        redirect_uri VARCHAR(255) NOT NULL,
+        scopes TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_platform_name (platform_name) 
+      )
+    `); 
+    // Ceate analytics table
+    await promisePool.execute(`
+      CREATE TABLE IF NOT EXISTS analytics (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        platform VARCHAR(50) NOT NULL,
+        metric VARCHAR(50) NOT NULL,  
+        value DECIMAL(10, 2) NOT NULL,
+        date DATE NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (platform) REFERENCES ads_platforms(platform_name) ON DELETE CASCADE,
+        UNIQUE KEY unique_analytics_per_user_platform_metric_date (user_id, platform, metric, date)
+      )
+    `);
+    // eslint-disable-next-line no-console
+    console.log('�� Database tables created successfully');
 
     console.log('✅ Database tables initialized successfully');
   } catch (error) {
