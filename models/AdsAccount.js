@@ -81,6 +81,33 @@ class AdsAccount {
     return await AdsAccount.findById(this.id);
   }
 
+  // findone to get account data
+  static async findOne({ token_id, account_id }) {
+    const [rows] = await pool.execute(    
+      `SELECT * FROM ads_accounts WHERE token_id = ? AND account_id = ? AND is_active = true`,
+      [token_id, account_id]
+    );
+    return rows.length > 0 ? new AdsAccount(rows[0]) : null;
+  }
+
+  // Update account status
+  async updateStatus(status) {
+    await pool.execute(
+      `UPDATE ads_accounts SET status =?, updated_at = CURRENT_TIMESTAMP WHERE id =?`,
+      [status, this.id]
+    );
+    return await AdsAccount.findById(this.id);
+  }
+  // Check if account exists
+  static async exists({ token_id, account_id }) {
+    const [rows] = await pool.execute(
+      `SELECT COUNT(*) as count FROM ads_accounts WHERE token_id = ? AND account_id = ? AND is_active = true`,
+      [token_id, account_id]
+    );
+    return rows[0].count > 0;
+  }
+
+
   // Soft delete account
   async delete() {
     await pool.execute(

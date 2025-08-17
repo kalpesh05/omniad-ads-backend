@@ -1,3 +1,4 @@
+const AdsAccount = require('../models/AdsAccount');
 const AdsManagerFactory = require('../services/adsManagerFactory');
 const {
     successResponse,
@@ -12,6 +13,25 @@ class AdsController {
     // ACCOUNT MANAGEMENT
     // ===========================================
 
+    // Get connected accounts from database
+    static async getConnectedAccounts(req, res) {
+        try {
+            const userId = req.user.id;
+            const platform = req.params.platform;   
+            const result = await AdsAccount.findByUserAndPlatform(userId, platform);
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+            successResponse(res, {
+                platform: validatedPlatform,
+                accounts: result.data
+            }, 'Connected accounts retrieved successfully');
+        } catch (error) {
+            console.error('Get Connected Accounts Error:', error);
+            errorResponse(res, 'Failed to retrieve connected accounts');
+        }
+    }
+    
     // Get ad accounts for a platform
     static async getAdAccounts(req, res) {
         try {
