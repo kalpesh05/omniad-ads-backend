@@ -474,6 +474,7 @@ class AdPlatformAuthenticator {
       switch (platform) {
         case 'google':
         case 'googleads':
+        case 'analytics':
           return await this.getGoogleUserInfo(accessToken);
         case 'facebook':
         case 'meta':
@@ -518,6 +519,8 @@ class AdPlatformAuthenticator {
         case 'google':
         case 'googleads':
           return await this.getGoogleAdAccounts(accessToken);
+        case 'analytics':
+          return await this.getGoogleAnalyticsAccounts(accessToken);
         case 'facebook':
         case 'meta':
         case 'instagram':
@@ -821,6 +824,56 @@ class AdPlatformAuthenticator {
       };
     }
   }
+
+  async getGoogleAnalyticsAccounts(accessToken) {
+    const baseUrl = "https://analyticsadmin.googleapis.com/betav1";
+
+    try {
+      // Fetch accounts
+      const accountResponse = await fetch(`${baseUrl}/accounts`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/json"
+        }
+      });
+
+      if (!accountResponse.ok) {
+        const errorText = await accountResponse.text();
+        console.error("Error fetching GA accounts:", errorText);
+        return {
+          gaAccounts: [],
+          totalAccounts: 0,
+          message: "Failed to fetch Google Analytics accounts"
+        };
+      }
+
+      const accountData = await accountResponse.json();
+      const accounts = accountData.accounts || [];
+
+      // Map to simplified account objects with assumed fields
+      const gaAccounts = accounts.map(account => ({
+        accountId: account.name.split('/')[1],
+        accountName: account.displayName || `Account ${account.name.split('/')[1]}`,
+        status: account.state || null,        // 'state' field sometimes used for status, may be undefined
+        currency: null                        // Currency not available at account level in GA Admin API
+      }));
+
+      return {
+        gaAccounts,
+        totalAccounts: gaAccounts.length,
+        message: gaAccounts.length > 0 ? undefined : "No Google Analytics accounts found"
+      };
+
+    } catch (error) {
+      console.error("Error fetching GA accounts:", error);
+      return {
+        gaAccounts: [],
+        totalAccounts: 0,
+        message: error.message || "Unknown error"
+      };
+    }
+  }
+
 
 
   async getFacebookAdAccounts(accessToken) {
@@ -1165,6 +1218,56 @@ class AdPlatformAuthenticator {
       platformsNeedingRefresh: Object.values(platformStatus).filter(s => s.needsRefresh).length
     };
   }
+
+  // ===========================================
+  // Property get from user's tokens
+  // ===========================================
+  async getGoogleAnalyticsProperties(accessToken, accountId) {
+    const baseUrl = `https://analyticsadmin.googleapis.com/v1/accounts/${accountId}/properties`;
+
+    try {
+      const propertiesResponse = await fetch(baseUrl, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/json"
+        }
+      });
+
+      if (!propertiesResponse.ok) {
+        const errorText = await propertiesResponse.text();
+        console.error(`Error fetching properties for account ${accountId}:`, errorText);
+        return {
+          properties: [],
+          message: `Failed to fetch properties for account ${accountId}`
+        };
+      }
+
+      const propertiesData = await propertiesResponse.json();
+      const properties = propertiesData.properties || [];
+
+      // Simplify and map the properties data
+      const mappedProperties = properties.map(prop => ({
+        propertyId: prop.name.split('/')[1],
+        propertyName: prop.displayName || `Property ${prop.name.split('/')[11]}`,
+        currency: prop.currencyCode || null,
+        status: prop.disableTime ? 'DISABLED' : 'ENABLED' // If property has disableTime, mark as DISABLED
+      }));
+
+      return {
+        properties: mappedProperties,
+        totalProperties: mappedProperties.length,
+        message: mappedProperties.length > 0 ? undefined : "No properties found"
+      };
+
+    } catch (error) {
+      console.error(`Error fetching properties for account ${accountId}:`, error);
+      return {
+        properties: [],
+        message: error.message || "Unknown error"
+      };
+    }
+  }
+
 }
 
 module.exports = AdPlatformAuthenticator;

@@ -237,6 +237,8 @@ router.get('/:platform/health', authenticateToken, AdsController.checkPlatformHe
  */
 router.get('/:platform/accounts', authenticateToken, AdsController.getAdAccounts);
 
+
+router.get('/:platform/connected/accounts', authenticateToken, AdsController.getConnectedAccounts);
 // ===========================================
 // CAMPAIGN MANAGEMENT
 // ===========================================
