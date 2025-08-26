@@ -115,20 +115,35 @@ const initializeDatabase = async () => {
           UNIQUE KEY unique_user_platform (user_id, platform)
       )`);
 
-    // Create ads_accounts table
+    // Create connected_accounts table
     await promisePool.execute(`
-      CREATE TABLE IF NOT EXISTS ads_accounts (
+      CREATE TABLE IF NOT EXISTS connected_accounts (
         id INT AUTO_INCREMENT PRIMARY KEY,
         token_id INT NOT NULL,
         account_id VARCHAR(255) NOT NULL,
         account_name VARCHAR(255) NOT NULL,
+        platform VARCHAR(50) NOT NULL,
+        account_type ENUM('personal', 'business', 'agency') DEFAULT 'business',
+        permissions JSON,
+        account_owner_name VARCHAR(255),
+        account_owner_email VARCHAR(255),
+        timezone VARCHAR(50) DEFAULT 'UTC',
+        country_code VARCHAR(5),
         currency VARCHAR(10),
+        billing_currency VARCHAR(10),
         status VARCHAR(50),
         is_active BOOLEAN DEFAULT true,
+        sync_enabled BOOLEAN DEFAULT true,
+        last_sync_at TIMESTAMP,
+        sync_frequency ENUM('hourly', 'daily', 'weekly') DEFAULT 'daily',
+        metadata JSON,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (token_id) REFERENCES ads_tokens(id) ON DELETE CASCADE,
-        UNIQUE KEY unique_account_per_token (token_id, account_id)
+        UNIQUE KEY unique_account_per_token (token_id, account_id),
+        INDEX idx_platform (platform),
+        INDEX idx_sync_enabled (sync_enabled),
+        INDEX idx_last_sync_at (last_sync_at)
       )
     `);
     // Create ads_campaigns table
@@ -145,7 +160,7 @@ const initializeDatabase = async () => {
         end_date  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (account_id) REFERENCES ads_accounts(id) ON DELETE CASCADE,         
+        FOREIGN KEY (account_id) REFERENCES connected_accounts(id) ON DELETE CASCADE,         
         UNIQUE KEY unique_campaign_per_account (account_id, campaign_id)
       )
     `);

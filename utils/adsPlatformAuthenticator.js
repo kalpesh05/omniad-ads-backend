@@ -2,7 +2,7 @@
 // Multi-Platform Advertisement Authentication System
 // Supports Google Ads, Facebook/Meta, Instagram, and YouTube
 const AdsToken = require('../models/AdsToken'); // Adjust the path as needed
-const AdsAccount = require('../models/AdsAccount'); // Adjust the path as needed
+const ConnectedAccount = require('../models/ConnectedAccount'); // Adjust the path as needed
 const Adsservice = require('../services/authService'); // Adjust the path as needed
 
 
@@ -25,13 +25,14 @@ class AdPlatformAuthenticator {
       analytics: {
         clientId: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        redirectUri: process.env.GOOGLE_REDIRECT_URI,
+        redirectUri: process.env.GOOGLE_ANALYTIC_REDIRECT_URI,
         scopes: [
           "openid",
           "email",
           "profile",
           'https://www.googleapis.com/auth/analytics',
-          'https://www.googleapis.com/auth/analytics.readonly'
+          'https://www.googleapis.com/auth/analytics.readonly',
+          'https://www.googleapis.com/auth/analytics.edit'
         ],
         authUrl: 'https://accounts.google.com/o/oauth2/auth',
         tokenUrl: 'https://oauth2.googleapis.com/token'
@@ -217,9 +218,10 @@ class AdPlatformAuthenticator {
       const userInfo = await this.getUserInfo(platform, tokenData.access_token);
       const permissions = await this.getPermissions(platform, tokenData.access_token);
       console.log("::: permissions:", permissions);
-      // Check if tokenData has ads accounts
-      if (permissions && permissions.adAccounts.length > 0 && permissions.totalAccounts > 0) {
-        for (const account of permissions.adAccounts || []) {
+      // Check if permissions has accounts and store them
+      const accounts = this.extractAccountsFromPermissions(permissions);
+      if (accounts && accounts.length > 0) {
+        for (const account of accounts) {
           await this.storeOrUpdateAccount(userId, AdsToken.id, platform, account);
         }
       }
@@ -826,7 +828,7 @@ class AdPlatformAuthenticator {
   }
 
   async getGoogleAnalyticsAccounts(accessToken) {
-    const baseUrl = "https://analyticsadmin.googleapis.com/betav1";
+    const baseUrl = "https://analyticsadmin.googleapis.com/v1beta";
 
     try {
       // Fetch accounts
@@ -941,6 +943,49 @@ class AdPlatformAuthenticator {
 
 
   // ===========================================
+  // ACCOUNT EXTRACTION HELPER
+  // ===========================================
+
+  // Extract accounts from different permission structures
+  extractAccountsFromPermissions(permissions) {
+    if (!permissions) return [];
+
+    // Handle different account key names based on platform
+    if (permissions.adAccounts && Array.isArray(permissions.adAccounts)) {
+      return permissions.adAccounts;
+    }
+
+    if (permissions.gaAccounts && Array.isArray(permissions.gaAccounts)) {
+      return permissions.gaAccounts.map(account => ({
+        account_id: account.accountId,
+        account_name: account.accountName,
+        status: account.status,
+        currency: account.currency
+      }));
+    }
+
+    // Handle Facebook/Meta specific case with multiple account types
+    let allAccounts = [];
+
+    if (permissions.adAccounts && Array.isArray(permissions.adAccounts)) {
+      allAccounts = [...allAccounts, ...permissions.adAccounts];
+    }
+
+    if (permissions.instagramAccounts && Array.isArray(permissions.instagramAccounts)) {
+      // Convert Instagram accounts to standard format
+      const instagramAccounts = permissions.instagramAccounts.map(account => ({
+        account_id: account.id || account.instagram_business_account?.id,
+        account_name: account.name || account.instagram_business_account?.name,
+        status: 'ACTIVE', // Instagram accounts are typically active if returned
+        currency: null // Instagram accounts don't have currency info
+      }));
+      allAccounts = [...allAccounts, ...instagramAccounts];
+    }
+
+    return allAccounts;
+  }
+
+  // ===========================================
   // UTILITY METHODS
   // ===========================================
 
@@ -1020,10 +1065,10 @@ class AdPlatformAuthenticator {
       last_refreshed: tokenData.last_refreshed
     });
 
-    // 2️⃣ If accounts were fetched during authentication, store them in ads_accounts
+    // 2️⃣ If accounts were fetched during authentication, store them in connected_accounts
     if (tokenData.accounts && Array.isArray(tokenData.accounts) && tokenData.accounts.length > 0) {
       for (const acc of tokenData.accounts) {
-        await AdsAccount.upsert({
+        await ConnectedAccount.upsert({
           token_id: tokenRecord.id, // FK to ads_tokens
           account_id: acc.account_id,
           account_name: acc.account_name,
@@ -1041,7 +1086,7 @@ class AdPlatformAuthenticator {
   async storeOrUpdateAccount(userId, tokenId, platform, accountData) {
     console.log(`Storing/updating ad account for user ${userId} on platform ${platform}`);
     try {
-      const existingAccount = await AdsAccount.findOne({
+      const existingAccount = await ConnectedAccount.findOne({
         token_id: tokenId,
         account_id: accountData.account_id
       });
@@ -1053,13 +1098,23 @@ class AdPlatformAuthenticator {
           is_active: true
         });
       } else {
-        return await AdsAccount.create({
+        return await ConnectedAccount.create({
           token_id: tokenId,
           account_id: accountData.account_id,
           account_name: accountData.account_name,
+          platform: platform,
+          account_type: "personal",
+          permissions: {},
+          account_owner_name: null,
+          account_owner_email: null,
+          country_code: null,
+          billing_currency: null,
           currency: accountData.currency || null,
           status: accountData.status || null,
-          is_active: true
+          is_active: true,
+          sync_enabled: true,
+          sync_frequency: "daily",
+          metadata: {}
         });
       }
     } catch (error) {
@@ -1223,8 +1278,8 @@ class AdPlatformAuthenticator {
   // Property get from user's tokens
   // ===========================================
   async getGoogleAnalyticsProperties(accessToken, accountId) {
-    const baseUrl = `https://analyticsadmin.googleapis.com/v1/accounts/${accountId}/properties`;
-
+    const baseUrl = `https://analyticsadmin.googleapis.com/v1beta/accounts/${accountId}/properties`;
+console.log(":: accessToken", accessToken)
     try {
       const propertiesResponse = await fetch(baseUrl, {
         headers: {

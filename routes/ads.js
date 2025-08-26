@@ -1171,6 +1171,60 @@ router.get('/youtube/accounts/:accountId/reports/video-performance', authenticat
 router.get('/youtube/channels/:channelId/analytics', authenticateToken, AdsController.getChannelAnalytics);
 
 // ===========================================
+// GOOGLE ANALYTICS SPECIFIC ROUTES
+// ===========================================
+
+/**
+ * @swagger
+ * /api/ads/analytics/accounts/{accountId}/properties:
+ *   get:
+ *     summary: Get Google Analytics properties for an account
+ *     tags: [Google Analytics Specific]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: accountId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Google Analytics account ID
+ *     responses:
+ *       200:
+ *         description: Analytics properties retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     platform:
+ *                       type: string
+ *                     accountId:
+ *                       type: string
+ *                     properties:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           propertyId:
+ *                             type: string
+ *                           propertyName:
+ *                             type: string
+ *                           currency:
+ *                             type: string
+ *                           status:
+ *                             type: string
+ *                     totalProperties:
+ *                       type: number
+ */
+router.get('/analytics/accounts/:accountId/properties', authenticateToken, AdsController.getAnalyticsProperties);
+
+// ===========================================
 // FACEBOOK TARGETING ROUTES
 // ===========================================
 

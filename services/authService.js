@@ -1,4 +1,4 @@
-const AdsAccount = require('../models/AdsAccount');
+const ConnectedAccount = require('../models/ConnectedAccount');
 const AdsToken = require('../models/AdsToken');
 
 class AuthService {
@@ -68,7 +68,7 @@ class AuthService {
   // Fetch ads accounts for a user via tokens
   async fetchAdsAccounts(userId, platform) {
     try {
-      const accounts = await AdsAccount.findByUserAndPlatform(userId, platform);
+      const accounts = await ConnectedAccount.findByUserAndPlatform(userId, platform);
       if (accounts.length === 0) {
         throw new Error(`No ${platform} accounts found for user`);
       }
@@ -81,7 +81,7 @@ class AuthService {
   // Check if user has accounts for a platform
   async userHasAccounts(userId, platform) {
     try {
-      const accounts = await AdsAccount.findByUserAndPlatform(userId, platform);
+      const accounts = await ConnectedAccount.findByUserAndPlatform(userId, platform);
       return accounts.length > 0;
     } catch (error) {
       throw error;

@@ -1,5 +1,6 @@
-const AdsAccount = require('../models/AdsAccount');
+const ConnectedAccount = require('../models/ConnectedAccount');
 const AdsManagerFactory = require('../services/adsManagerFactory');
+const AdPlatformAuthenticator = require('../utils/adsPlatformAuthenticator');
 const {
     successResponse,
     errorResponse,
@@ -18,13 +19,14 @@ class AdsController {
         try {
             const userId = req.user.id;
             const platform = req.params.platform;   
-            const result = await AdsAccount.findByUserAndPlatform(userId, platform);
-            if (!result.success) {
+            const result = await ConnectedAccount.findByUserAndPlatform(userId, platform);
+            console.log(":: result", result)
+            if (result.length == 0) {
                 return errorResponse(res, result.error);
             }
             successResponse(res, {
-                platform: validatedPlatform,
-                accounts: result.data
+                platform: result.map((v) => v.platform),
+                accounts: result
             }, 'Connected accounts retrieved successfully');
         } catch (error) {
             console.error('Get Connected Accounts Error:', error);
@@ -598,6 +600,33 @@ class AdsController {
         } catch (error) {
             console.error('Get Channel Analytics Error:', error);
             errorResponse(res, 'Failed to retrieve channel analytics');
+        }
+    }
+
+    // Get Google Analytics properties
+    static async getAnalyticsProperties(req, res) {
+        try {
+            const { accountId } = req.params;
+            const userId = req.user.id;
+
+            const authenticator = new AdPlatformAuthenticator();
+            const accessToken = await authenticator.getValidAccessToken(userId, 'analytics');
+            
+            if (!accessToken) {
+                return errorResponse(res, 'No valid analytics access token found. Please re-authenticate.');
+            }
+            const analyticsData = await ConnectedAccount.findById(accountId);
+            const result = await authenticator.getGoogleAnalyticsProperties(accessToken, analyticsData.account_id);
+            
+            successResponse(res, {
+                platform: 'analytics',
+                accountId,
+                properties: result.properties,
+                totalProperties: result.totalProperties
+            }, 'Analytics properties retrieved successfully');
+        } catch (error) {
+            console.error('Get Analytics Properties Error:', error);
+            errorResponse(res, 'Failed to retrieve analytics properties');
         }
     }
 
