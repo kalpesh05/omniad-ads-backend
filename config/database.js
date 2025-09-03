@@ -43,8 +43,7 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  connectTimeout: 60000,   // instead of timeout
-  acquireTimeout: 60000,
+  connectTimeout: 60000,   // valid
 });
 
 // Get promise-based connection
