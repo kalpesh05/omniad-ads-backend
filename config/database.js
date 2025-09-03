@@ -35,11 +35,11 @@ async function ensureDatabaseExists() {
 
 // Create connection pool for better performance
 const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT,
+  host: process.env.DB_HOST || process.env.MYSQLHOST,
+  port: process.env.DB_PORT || process.env.MYSQLPORT,
+  user: process.env.DB_USER || process.env.MYSQLUSER,
+  password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD,
+  database: process.env.DB_NAME || process.env.MYSQLDATABASE,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
@@ -213,7 +213,7 @@ const initializeDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_platform_name (platform_name) 
       )
-    `); 
+    `);
     // Ceate analytics table
     await promisePool.execute(`
       CREATE TABLE IF NOT EXISTS analytics (
