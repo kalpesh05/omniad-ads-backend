@@ -3,11 +3,23 @@ require('dotenv').config();
 
 // Ensure database exists before creating pool
 async function ensureDatabaseExists() {
+  console.log("::-----------------------", {
+    host: process.env.DB_HOST || process.env.MYSQLHOST,
+    port: process.env.DB_PORT || process.env.MYSQLPORT,
+    user: process.env.DB_USER || process.env.MYSQLUSER,
+    password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD,
+    database: process.env.DB_NAME || process.env.MYSQLDATABASE,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+    connectTimeout: 60000,   // valid
+  })
   const connection = mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    port: process.env.DB_PORT
+    host: process.env.DB_HOST || process.env.MYSQLHOST,
+    port: process.env.DB_PORT || process.env.MYSQLPORT,
+    user: process.env.DB_USER || process.env.MYSQLUSER,
+    password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD,
+    database: process.env.DB_NAME || process.env.MYSQLDATABASE,
     // Do NOT specify database here
   });
   const dbName = process.env.DB_NAME;
@@ -48,6 +60,21 @@ const pool = mysql.createPool({
 
 // Get promise-based connection
 const promisePool = pool.promise();
+
+// Keep-alive ping every 5 minutes
+setInterval(async () => {
+  try {
+    await promisePool.query('SELECT 1');
+    // console.log('✅ MySQL keep-alive ping');
+  } catch (err) {
+    console.error('❌ MySQL keep-alive failed:', err.message);
+  }
+}, 5 * 60 * 1000);
+
+// Pool error handling
+pool.on('error', (err) => {
+  console.error('❌ MySQL Pool Error:', err.code);
+});
 
 // Test database connection
 const testConnection = async () => {
