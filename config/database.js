@@ -3,7 +3,7 @@ require('dotenv').config();
 
 // Ensure database exists before creating pool
 async function ensureDatabaseExists() {
-  console.log("::-----------------------", {
+  console.log("::----------------------- changes", {
     host: process.env.MYSQL_HOST,       // <-- Railway-provided
     port: process.env.MYSQL_PORT,
     user: process.env.MYSQL_USER,
