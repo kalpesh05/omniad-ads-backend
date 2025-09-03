@@ -17,10 +17,10 @@ const cleanupInterval = setInterval(async () => {
 // Graceful shutdown
 const gracefulShutdown = (signal) => {
   logger.info(`📡 Received ${signal}. Starting graceful shutdown...`);
-  
+
   // Clear cleanup interval
   clearInterval(cleanupInterval);
-  
+
   // Close server
   server.close(() => {
     logger.info('🏁 Server closed');
@@ -37,9 +37,9 @@ const server = app.listen(PORT, () => {
     documentation: process.env.NODE_ENV !== 'production' ? `http://localhost:${PORT}/api-docs` : null,
     pid: process.pid
   };
-  
+
   logger.info('🚀 Server started successfully', startupInfo);
-  
+
   if (process.env.NODE_ENV !== 'production') {
     console.log(`\n🚀 Server running on port ${PORT}`);
     console.log(`📍 Environment: ${startupInfo.environment}`);
@@ -51,7 +51,17 @@ const server = app.listen(PORT, () => {
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
-  logger.error('❌ Uncaught Exception:', { error: error.message, stack: error.stack });
+  logger.error('❌ Uncaught Exception:', { error: error.message, stack: error.stack }, {
+    host: process.env.DB_HOST || process.env.MYSQLHOST,
+    port: process.env.DB_PORT || process.env.MYSQLPORT,
+    user: process.env.DB_USER || process.env.MYSQLUSER,
+    password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD,
+    database: process.env.DB_NAME || process.env.MYSQLDATABASE,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+    connectTimeout: 60000,   // valid
+  });
   process.exit(1);
 });
 
