@@ -14,7 +14,11 @@ class AuthController {
   // User registration
   static async register(req, res) {
     try {
-      const { username, email, password, role } = req.body;
+      const { username, full_name, email, password, role } = req.body;
+
+      if (!username) {
+        username = full_name.toLowerCase().replace(/\s+/g, "_");
+      }
 
       // Check if user already exists
       const existingEmail = await User.emailExists(email);
