@@ -22,6 +22,7 @@ const handleValidationErrors = (req, res, next) => {
 // Registration validation rules
 const validateRegistration = [
   body('username')
+    .optional()
     .trim()
     .isLength({ min: 3, max: 50 })
     .withMessage('Username must be between 3 and 50 characters')
