@@ -34,8 +34,8 @@ app.use(compression);
 app.use(securityHeaders);
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://yourdomain.com'] 
-    : ['http://localhost:3000', 'http://localhost:8080'],
+    ? ['https://omnilens.netlify.app'] 
+    : ['http://localhost:3000', 'http://localhost:8080','https://omnilens.netlify.app'],
   credentials: true
 }));
 
