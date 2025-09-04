@@ -14,7 +14,7 @@ class AuthController {
   // User registration
   static async register(req, res) {
     try {
-      const { username, full_name, email, password, role } = req.body;
+      let { username, full_name, email, password, role } = req.body;
 
       if (!username) {
         username = full_name.toLowerCase().replace(/\s+/g, "_");
