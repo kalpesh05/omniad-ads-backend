@@ -263,7 +263,7 @@ class AdPlatformAuthenticator {
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.refreshConfig.timeoutMs);
-
+console.log(":: params", params)
     try {
       const response = await fetch(config.tokenUrl, {
         method: 'POST',
