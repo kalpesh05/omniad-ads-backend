@@ -1068,6 +1068,7 @@ class AdPlatformAuthenticator {
     // 2️⃣ If accounts were fetched during authentication, store them in connected_accounts
     if (tokenData.accounts && Array.isArray(tokenData.accounts) && tokenData.accounts.length > 0) {
       for (const acc of tokenData.accounts) {
+        console.log("::: add log acc", acc, tokenRecord.id)
         await ConnectedAccount.upsert({
           token_id: tokenRecord.id, // FK to ads_tokens
           account_id: acc.account_id,
