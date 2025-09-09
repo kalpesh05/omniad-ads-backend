@@ -58,8 +58,8 @@ class ConnectedAccount {
     );
     if (rows.length > 0) {
       const data = rows[0];
-      if (data.permissions) data.permissions = JSON.parse(data.permissions);
-      if (data.metadata) data.metadata = JSON.parse(data.metadata);
+      if (typeof data.permissions === 'string') data.permissions = JSON.parse(data.permissions);
+      if (typeof data.metadata === 'string') data.metadata = JSON.parse(data.metadata);
       return new ConnectedAccount(data);
     }
     return null;
@@ -72,8 +72,8 @@ class ConnectedAccount {
       [token_id]
     );
     return rows.map(row => {
-      if (row.permissions) row.permissions = JSON.parse(row.permissions);
-      if (row.metadata) row.metadata = JSON.parse(row.metadata);
+      if (typeof row.permissions === "string") row.permissions = JSON.parse(row.permissions);
+      if (typeof row.metadata === "string") row.metadata = JSON.parse(row.metadata);
       return new ConnectedAccount(row);
     });
   }
@@ -138,8 +138,8 @@ class ConnectedAccount {
     );
     if (rows.length > 0) {
       const data = rows[0];
-      if (data.permissions) data.permissions = JSON.parse(data.permissions);
-      if (data.metadata) data.metadata = JSON.parse(data.metadata);
+      if (typeof data.permissions === 'string') data.permissions = JSON.parse(data.permissions);
+      if (typeof data.metadata === 'string') data.metadata = JSON.parse(data.metadata);
       return new ConnectedAccount(data);
     }
     return null;
