@@ -88,8 +88,8 @@ class ConnectedAccount {
       [user_id, platform]
     );
     return rows.map(row => {
-      if (row.permissions) row.permissions = JSON.parse(row.permissions);
-      if (row.metadata) row.metadata = JSON.parse(row.metadata);
+      if (typeof row.permissions === "string") row.permissions = JSON.parse(row.permissions);
+      if (typeof row.metadata === "string") row.metadata = JSON.parse(row.metadata);
       return new ConnectedAccount(row);
     });
   }
