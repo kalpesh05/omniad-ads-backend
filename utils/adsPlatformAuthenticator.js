@@ -263,7 +263,7 @@ class AdPlatformAuthenticator {
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.refreshConfig.timeoutMs);
-console.log(":: params", params)
+    console.log(":: params", params)
     try {
       const response = await fetch(config.tokenUrl, {
         method: 'POST',
@@ -1059,7 +1059,7 @@ console.log(":: params", params)
       platform,
       access_token: tokenData.access_token,
       refresh_token: tokenData.refresh_token || null,
-      expiry_date: tokenData.expires_at ? new Date(tokenData.expires_at).toISOString() : null,
+      expiry_date: tokenData.expires_at ? new Date(tokenData.expires_at).toISOString().slice(0, 19).replace('T', ' ') : null,
       token_type: tokenData.token_type || 'Bearer',
       scope: tokenData.scope || '',
       last_refreshed: tokenData.last_refreshed
@@ -1135,7 +1135,7 @@ console.log(":: params", params)
     return {
       access_token: tokenRecord.access_token,
       refresh_token: tokenRecord.refresh_token ? tokenRecord.refresh_token : null,
-      expires_at: tokenRecord.expiry_date ? new Date(tokenRecord.expiry_date).toISOString() : null,
+      expiry_date: tokenData.expiry_date,
       last_refreshed: tokenRecord.last_refreshed
     };
 
@@ -1259,7 +1259,7 @@ console.log(":: params", params)
       platformStatus[platform] = {
         isAuthenticated: !!tokens.access_token,
         hasRefreshToken: !!tokens.refresh_token,
-        expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date).toISOString() : null,
+        expiry_date: tokenData.expiry_date,
         needsRefresh: tokens.access_token ? this.isTokenExpiringSoon(tokens) : false,
         lastRefreshed: tokens.last_refreshed
       };
@@ -1279,7 +1279,7 @@ console.log(":: params", params)
   // ===========================================
   async getGoogleAnalyticsProperties(accessToken, accountId) {
     const baseUrl = `https://analyticsadmin.googleapis.com/v1beta/accounts/${accountId}/properties`;
-console.log(":: accessToken", accessToken)
+    console.log(":: accessToken", accessToken)
     try {
       const propertiesResponse = await fetch(baseUrl, {
         headers: {
