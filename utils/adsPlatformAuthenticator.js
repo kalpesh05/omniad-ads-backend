@@ -1062,7 +1062,7 @@ class AdPlatformAuthenticator {
       expiry_date: tokenData.expires_at ? new Date(tokenData.expires_at).toISOString().slice(0, 19).replace('T', ' ') : null,
       token_type: tokenData.token_type || 'Bearer',
       scope: tokenData.scope || '',
-      last_refreshed: tokenData.last_refreshed
+      last_refreshed: tokenData.last_refreshed ? new Date(tokenData.last_refreshed).toISOString().slice(0, 19).replace('T', ' ') : null
     });
 
     // 2️⃣ If accounts were fetched during authentication, store them in connected_accounts
