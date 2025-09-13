@@ -1136,7 +1136,7 @@ class AdPlatformAuthenticator {
     return {
       access_token: tokenRecord.access_token,
       refresh_token: tokenRecord.refresh_token ? tokenRecord.refresh_token : null,
-      expiry_date: tokenData.expiry_date,
+      expiry_date: tokenRecord.expiry_date,
       last_refreshed: tokenRecord.last_refreshed
     };
 
