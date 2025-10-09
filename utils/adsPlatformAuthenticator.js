@@ -1279,7 +1279,7 @@ class AdPlatformAuthenticator {
   // Property get from user's tokens
   // ===========================================
   async getGoogleAnalyticsProperties(accessToken, accountId) {
-    const baseUrl = `https://analyticsadmin.googleapis.com/v1beta/accounts/${accountId}/properties`;
+    const baseUrl = `https://analyticsadmin.googleapis.com/v1beta/properties?filter=parent:accounts/${accountId}`;
     console.log(":: accessToken", accessToken)
     try {
       const propertiesResponse = await fetch(baseUrl, {
@@ -1303,8 +1303,8 @@ class AdPlatformAuthenticator {
 
       // Simplify and map the properties data
       const mappedProperties = properties.map(prop => ({
-        propertyId: prop.name.split('/')[1],
-        propertyName: prop.displayName || `Property ${prop.name.split('/')[11]}`,
+        id: prop.name.split('/')[1],
+        displayName: prop.displayName || `Property ${prop.name.split('/')[11]}`,
         currency: prop.currencyCode || null,
         status: prop.disableTime ? 'DISABLED' : 'ENABLED' // If property has disableTime, mark as DISABLED
       }));
@@ -1321,6 +1321,66 @@ class AdPlatformAuthenticator {
         properties: [],
         message: error.message || "Unknown error"
       };
+    }
+  }
+
+  // ==========================================
+  // Porperty matric
+  // ==========================================
+  /**
+ * Fetch GA4 metrics (Sessions, Page Views, Users, Bounce Rate, Average Session Duration)
+ * @param {string} accessToken - Google OAuth token
+ * @param {string} propertyId - GA4 property ID
+ * @param {string} startDate - 'YYYY-MM-DD'
+ * @param {string} endDate - 'YYYY-MM-DD'
+ * @returns {Object} metrics data from GA4 Data API
+ */
+  async getGoogleAnalyticsMetrics(accessToken, propertyId, startDate, endDate) {
+    const url = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`;
+
+    const requestBody = {
+      dateRanges: [{ startDate, endDate }],
+      metrics: [
+        { name: "sessions" },
+        { name: "screenPageViews" },
+        { name: "activeUsers" },
+        { name: "bounceRate" },
+        { name: "averageSessionDuration" }
+      ]
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Error fetching GA4 metrics:`, errorText);
+        return { metrics: {}, message: "Failed to fetch GA4 metrics" };
+      }
+
+      const data = await response.json();
+      const values = (data.rows && data.rows[0] && data.rows[0].metricValues) || [];
+      // Return result mapping metric names for clarity
+      return {
+        metrics: {
+          sessions: values[0]?.value || "0",
+          pageViews: values[1]?.value || "0",
+          users: values[2]?.value || "0",
+          bounceRate: values[3]?.value || "0",
+          avgSessionDuration: values[4]?.value || "0"
+        },
+        message: "Success"
+      };
+    } catch (error) {
+      console.error("Error fetching GA4 metrics:", error);
+      return { metrics: {}, message: error.message || "Unknown error" };
     }
   }
 

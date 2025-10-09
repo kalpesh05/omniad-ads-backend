@@ -1,6 +1,7 @@
 const ConnectedAccount = require('../models/ConnectedAccount');
 const AdsManagerFactory = require('../services/adsManagerFactory');
 const AdPlatformAuthenticator = require('../utils/adsPlatformAuthenticator');
+const { queryToDateRange } = require('../utils/common');
 const {
     successResponse,
     errorResponse,
@@ -18,7 +19,7 @@ class AdsController {
     static async getConnectedAccounts(req, res) {
         try {
             const userId = req.user.id;
-            const platform = req.params.platform;   
+            const platform = req.params.platform;
             const result = await ConnectedAccount.findByUserAndPlatform(userId, platform);
             console.log(":: result", result)
             if (result.length == 0) {
@@ -33,7 +34,7 @@ class AdsController {
             errorResponse(res, 'Failed to retrieve connected accounts');
         }
     }
-    
+
     // Get ad accounts for a platform
     static async getAdAccounts(req, res) {
         try {
@@ -42,9 +43,9 @@ class AdsController {
 
             const validatedPlatform = AdsManagerFactory.validatePlatform(platform);
             const adsManager = AdsManagerFactory.createManager(validatedPlatform);
-            
+
             const result = await adsManager.getAdAccounts(userId);
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -66,7 +67,7 @@ class AdsController {
 
             const adsManager = AdsManagerFactory.createManager('youtube');
             const result = await adsManager.getChannels(userId);
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -90,7 +91,7 @@ class AdsController {
 
             const adsManager = AdsManagerFactory.createManager('youtube');
             const result = await adsManager.getChannelVideos(userId, channelId, parseInt(maxResults));
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -113,7 +114,7 @@ class AdsController {
 
             const adsManager = AdsManagerFactory.createManager('facebook');
             const result = await adsManager.getBusinessAccounts(userId);
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -135,7 +136,7 @@ class AdsController {
 
             const adsManager = AdsManagerFactory.createManager('facebook');
             const result = await adsManager.getInstagramAccounts(userId);
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -163,14 +164,14 @@ class AdsController {
 
             const validatedPlatform = AdsManagerFactory.validatePlatform(platform);
             const adsManager = AdsManagerFactory.createManager(validatedPlatform);
-            
+
             const filters = {};
             if (status) filters.status = status;
             if (campaignType) filters.campaignType = campaignType;
             if (objective) filters.objective = objective;
 
             const result = await adsManager.getCampaigns(userId, accountId, filters);
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -195,9 +196,9 @@ class AdsController {
 
             const validatedPlatform = AdsManagerFactory.validatePlatform(platform);
             const adsManager = AdsManagerFactory.createManager(validatedPlatform);
-            
+
             const result = await adsManager.createCampaign(userId, accountId, campaignData);
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -222,14 +223,14 @@ class AdsController {
 
             const validatedPlatform = AdsManagerFactory.validatePlatform(platform);
             const adsManager = AdsManagerFactory.createManager(validatedPlatform);
-            
+
             let result;
             if (validatedPlatform === 'youtube' || validatedPlatform === 'google') {
                 result = await adsManager.updateCampaign(userId, accountId, campaignId, updates);
             } else {
                 result = await adsManager.updateCampaign(userId, campaignId, updates);
             }
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -259,14 +260,14 @@ class AdsController {
 
             const validatedPlatform = AdsManagerFactory.validatePlatform(platform);
             const adsManager = AdsManagerFactory.createManager(validatedPlatform);
-            
+
             let result;
             if (validatedPlatform === 'youtube') {
                 result = await adsManager.getAdGroups(userId, accountId, campaignId);
             } else {
                 result = await adsManager.getAdSets(userId, accountId, campaignId);
             }
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -295,7 +296,7 @@ class AdsController {
 
             const validatedPlatform = AdsManagerFactory.validatePlatform(platform);
             const adsManager = AdsManagerFactory.createManager(validatedPlatform);
-            
+
             let result;
             if (validatedPlatform === 'youtube') {
                 adSetData.campaignId = campaignId;
@@ -303,13 +304,13 @@ class AdsController {
             } else {
                 result = await adsManager.createAdSet(userId, campaignId, adSetData);
             }
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
 
             const entityName = validatedPlatform === 'youtube' ? 'Ad group' : 'Ad set';
-            
+
             successResponse(res, {
                 platform: validatedPlatform,
                 accountId,
@@ -335,9 +336,9 @@ class AdsController {
 
             const validatedPlatform = AdsManagerFactory.validatePlatform(platform);
             const adsManager = AdsManagerFactory.createManager(validatedPlatform);
-            
+
             const result = await adsManager.getAds(userId, accountId, adSetId);
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -363,7 +364,7 @@ class AdsController {
 
             const validatedPlatform = AdsManagerFactory.validatePlatform(platform);
             const adsManager = AdsManagerFactory.createManager(validatedPlatform);
-            
+
             let result;
             if (validatedPlatform === 'youtube') {
                 adData.adGroupId = adSetId;
@@ -371,7 +372,7 @@ class AdsController {
             } else {
                 result = await adsManager.createAd(userId, adSetId, adData);
             }
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -400,7 +401,7 @@ class AdsController {
 
             const adsManager = AdsManagerFactory.createManager('facebook');
             const result = await adsManager.getAdCreatives(userId, accountId);
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -425,7 +426,7 @@ class AdsController {
 
             const adsManager = AdsManagerFactory.createManager('facebook');
             const result = await adsManager.createAdCreative(userId, accountId, creativeData);
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -450,7 +451,7 @@ class AdsController {
 
             const adsManager = AdsManagerFactory.createManager('facebook');
             const result = await adsManager.uploadImage(userId, accountId, imageData);
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -479,9 +480,9 @@ class AdsController {
 
             const adsManager = AdsManagerFactory.createManager('youtube');
             adData.adGroupId = adSetId;
-            
+
             const result = await adsManager.createBumperAd(userId, accountId, adData);
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -507,7 +508,7 @@ class AdsController {
 
             const adsManager = AdsManagerFactory.createManager('youtube');
             const result = await adsManager.addChannelTargeting(userId, accountId, adGroupId, channelIds);
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -533,7 +534,7 @@ class AdsController {
 
             const adsManager = AdsManagerFactory.createManager('youtube');
             const result = await adsManager.uploadVideoAsset(userId, accountId, assetData);
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -558,9 +559,9 @@ class AdsController {
 
             const adsManager = AdsManagerFactory.createManager('youtube');
             const dateRange = { start: startDate, end: endDate };
-            
+
             const result = await adsManager.getVideoPerformanceReport(userId, accountId, dateRange);
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -586,7 +587,7 @@ class AdsController {
 
             const adsManager = AdsManagerFactory.createManager('youtube');
             const result = await adsManager.getChannelAnalytics(userId, channelId, startDate, endDate);
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -611,13 +612,13 @@ class AdsController {
 
             const authenticator = new AdPlatformAuthenticator();
             const accessToken = await authenticator.getValidAccessToken(userId, 'analytics');
-            
+
             if (!accessToken) {
                 return errorResponse(res, 'No valid analytics access token found. Please re-authenticate.');
             }
             const analyticsData = await ConnectedAccount.findById(accountId);
             const result = await authenticator.getGoogleAnalyticsProperties(accessToken, analyticsData.account_id);
-            
+
             successResponse(res, {
                 platform: 'analytics',
                 accountId,
@@ -629,6 +630,51 @@ class AdsController {
             errorResponse(res, 'Failed to retrieve analytics properties');
         }
     }
+
+    // Get Google Analytics metrics for a property in a date range
+    static async getAnalyticsMetrics(req, res) {
+        try {
+            const { accountId } = req.params;
+            const { dateRange, propertyId } = req.query; // e.g. 7, 30, 90, 'year'
+            const userId = req.user.id;
+
+            // Authenticator and connected account setup
+            const authenticator = new AdPlatformAuthenticator();
+            const accessToken = await authenticator.getValidAccessToken(userId, 'analytics');
+
+            if (!accessToken) {
+                return errorResponse(res, 'No valid analytics access token found. Please re-authenticate.');
+            }
+            const analyticsData = await ConnectedAccount.findById(accountId);
+
+            // Compute date range dynamically
+            const { startDate, endDate } = queryToDateRange(dateRange); // Default 30 days if not supplied
+
+            // Call your earlier function for metrics
+            const metricsResult = await authenticator.getGoogleAnalyticsMetrics(
+                accessToken,
+                propertyId,
+                startDate,
+                endDate
+            );
+
+            if (!metricsResult.metrics) {
+                return errorResponse(res, metricsResult.message || 'Failed to retrieve analytics metrics.');
+            }
+
+            successResponse(res, {
+                platform: 'analytics',
+                accountId,
+                propertyId,
+                period: { startDate, endDate },
+                metrics: metricsResult.metrics
+            }, 'Analytics metrics retrieved successfully');
+        } catch (error) {
+            console.error('Get Analytics Metrics Error:', error);
+            errorResponse(res, 'Failed to retrieve analytics metrics');
+        }
+    }
+
 
     // ===========================================
     // TARGETING HELPERS (Facebook specific)
@@ -643,7 +689,7 @@ class AdsController {
 
             const adsManager = AdsManagerFactory.createManager('facebook');
             const result = await adsManager.getTargetingOptions(userId, type, query);
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -668,7 +714,7 @@ class AdsController {
 
             const adsManager = AdsManagerFactory.createManager('facebook');
             const result = await adsManager.getDeliveryEstimate(userId, accountId, targeting, optimizationGoal);
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -692,18 +738,18 @@ class AdsController {
     static async getInsights(req, res) {
         try {
             const { platform, accountId, objectId } = req.params;
-            const { 
-                level = 'campaign', 
-                datePreset = 'last_30d', 
-                startDate, 
-                endDate, 
-                fields 
+            const {
+                level = 'campaign',
+                datePreset = 'last_30d',
+                startDate,
+                endDate,
+                fields
             } = req.query;
             const userId = req.user.id;
 
             const validatedPlatform = AdsManagerFactory.validatePlatform(platform);
             const adsManager = AdsManagerFactory.createManager(validatedPlatform);
-            
+
             let result;
             const metricsFields = fields ? fields.split(',') : null;
 
@@ -723,7 +769,7 @@ class AdsController {
                     result = await adsManager.getInsights(userId, objectId, level, datePreset, metricsFields);
                 }
             }
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -755,14 +801,14 @@ class AdsController {
 
             const validatedPlatform = AdsManagerFactory.validatePlatform(platform);
             const adsManager = AdsManagerFactory.createManager(validatedPlatform);
-            
+
             let result;
             if (validatedPlatform === 'youtube') {
                 result = await adsManager.bulkUpdateCampaignStatus(userId, accountId, campaignIds, status);
             } else {
                 result = await adsManager.bulkUpdateCampaignStatus(userId, campaignIds, status);
             }
-            
+
             if (!result.success) {
                 return errorResponse(res, result.error);
             }
@@ -786,7 +832,7 @@ class AdsController {
     static async getSupportedPlatforms(req, res) {
         try {
             const platforms = AdsManagerFactory.getSupportedPlatforms();
-            
+
             successResponse(res, {
                 platforms,
                 count: platforms.length
@@ -805,10 +851,10 @@ class AdsController {
 
             const validatedPlatform = AdsManagerFactory.validatePlatform(platform);
             const adsManager = AdsManagerFactory.createManager(validatedPlatform);
-            
+
             // Try to get ad accounts as a health check
             const result = await adsManager.getAdAccounts(userId);
-            
+
             successResponse(res, {
                 platform: validatedPlatform,
                 healthy: result.success,
