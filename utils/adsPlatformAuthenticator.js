@@ -1373,13 +1373,14 @@ class AdPlatformAuthenticator {
       let users = values[2]?.value || "0";
       let bouncRate =   values[3]?.value || "0";
       let avgSessionDurationSec = values[4]?.value || "0";
+
       return {
         metrics: {
           sessions: parseInt(sessions),
           pageViews: parseInt(pageViews),
           users: parseInt(users),
-          bouncRate: (bouncRate * 100).toFixed(2),
-          avgSessionDuration:  (avgSessionDurationSec / 60).toFixed(2)
+          bouncRate: Number((bouncRate * 100).toFixed(2)),
+          avgSessionDuration:  Number((avgSessionDurationSec / 60).toFixed(2))
         },
         message: "Success"
       };
