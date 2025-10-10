@@ -1368,13 +1368,18 @@ class AdPlatformAuthenticator {
       const data = await response.json();
       const values = (data.rows && data.rows[0] && data.rows[0].metricValues) || [];
       // Return result mapping metric names for clarity
+      let sessions = values[0]?.value || "0";
+      let pageViews = values[1]?.value || "0";
+      let users = values[2]?.value || "0";
+      let bouncRate =   values[3]?.value || "0";
+      let avgSessionDurationSec = values[4]?.value || "0";
       return {
         metrics: {
-          sessions: values[0]?.value || "0",
-          pageViews: values[1]?.value || "0",
-          users: values[2]?.value || "0",
-          bounceRate: values[3]?.value || "0",
-          avgSessionDuration: values[4]?.value || "0"
+          sessions: parseInt(sessions),
+          pageViews: parseInt(pageViews),
+          users: parseInt(users),
+          bouncRate: (bouncRate * 100).toFixed(2),
+          avgSessionDuration:  (avgSessionDurationSec / 60).toFixed(2)
         },
         message: "Success"
       };
