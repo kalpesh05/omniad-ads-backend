@@ -664,7 +664,6 @@ class AdsController {
 
             successResponse(res, {
                 platform: 'analytics',
-                accountId,
                 propertyId,
                 period: { startDate, endDate },
                 metrics: metricsResult.metrics
