@@ -634,7 +634,7 @@ class AdsController {
     // Get Google Analytics metrics for a property in a date range
     static async getAnalyticsMetrics(req, res) {
         try {
-            const { accountId } = req.params;
+            // const { accountId } = req.params;
             const { dateRange, propertyId } = req.query; // e.g. 7, 30, 90, 'year'
             const userId = req.user.id;
 
@@ -645,7 +645,7 @@ class AdsController {
             if (!accessToken) {
                 return errorResponse(res, 'No valid analytics access token found. Please re-authenticate.');
             }
-            const analyticsData = await ConnectedAccount.findById(accountId);
+            // const analyticsData = await ConnectedAccount.findById(accountId);
 
             // Compute date range dynamically
             const { startDate, endDate } = queryToDateRange(dateRange); // Default 30 days if not supplied

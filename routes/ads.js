@@ -1223,6 +1223,91 @@ router.get('/youtube/channels/:channelId/analytics', authenticateToken, AdsContr
  *                       type: number
  */
 router.get('/analytics/accounts/:accountId/properties', authenticateToken, AdsController.getAnalyticsProperties);
+// api for over view /api/ads/analytics/overview?propertyId=317450230&dateRange=last-30-days
+
+/**
+ * @swagger
+ * /api/ads/analytics/overview:
+ *   get:
+ *     summary: Get Google Analytics overview
+ *     tags: [Google Analytics Specific]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Google Analytics property ID
+ *       - in: query
+ *         name: dateRange
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Date range for overview
+ *     responses: 
+ *       200:
+ *         description: Analytics overview retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     platform:
+ *                       type: string
+ *                     accountId:
+ *                       type: string 
+ *                     propertyId:
+ *                       type: string
+ *                     dateRange:
+ *                       type: string
+ *                     metrics:
+ *                       type: object
+ *                       properties:
+ *                         views:
+ *                           type: number
+ *                         sessions:
+ *                           type: number
+ *                         pageviews:
+ *                           type: number
+ *                         bounces:
+ *                           type: number
+ *                         goalCompletions:
+ *                           type: number
+ *                         goalValue:
+ *                           type: number
+ *                     currency:
+ *                       type: string
+ *                     status:
+ *                       type: string
+ *                     startDate:
+ *                       type: string
+ *                     endDate:
+ *                       type: string
+ *                     totalProperties:
+ *                       type: number
+ *                     properties:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           propertyId:  
+ *                             type: string
+ *                           propertyName:
+ *                             type: string
+ *                           currency:  
+ *                             type: string
+ *                           status:  
+ *                             type: string   
+ */
+router.get('/analytics/overview', authenticateToken, AdsController.getAnalyticsMetrics);
+
 
 // ===========================================
 // FACEBOOK TARGETING ROUTES
