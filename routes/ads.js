@@ -1308,6 +1308,32 @@ router.get('/analytics/accounts/:accountId/properties', authenticateToken, AdsCo
  */
 router.get('/analytics/overview', authenticateToken, AdsController.getAnalyticsMetrics);
 
+/**
+ * @swagger
+ * /api/ads/analytics/charts:
+ *   get:
+ *     summary: Get Google Analytics charts
+ *     tags: [Google Analytics Specific]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Google Analytics property ID
+ *       - in: query
+ *         name: year
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Year for charts
+ *     responses:
+ *       200:
+ *         description: Analytics charts retrieved successfully
+ */
+router.get('/analytics/charts', authenticateToken, AdsController.getAnalyticsMonthlyChart);
 
 // ===========================================
 // FACEBOOK TARGETING ROUTES

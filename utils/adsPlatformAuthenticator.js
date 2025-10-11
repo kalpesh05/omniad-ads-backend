@@ -1371,7 +1371,7 @@ class AdPlatformAuthenticator {
       let sessions = values[0]?.value || "0";
       let pageViews = values[1]?.value || "0";
       let users = values[2]?.value || "0";
-      let bounceRate =   values[3]?.value || "0";
+      let bounceRate = values[3]?.value || "0";
       let avgSessionDurationSec = values[4]?.value || "0";
 
       return {
@@ -1380,7 +1380,7 @@ class AdPlatformAuthenticator {
           pageViews: parseInt(pageViews),
           users: parseInt(users),
           bounceRate: Number((bounceRate * 100).toFixed(2)),
-          avgSessionDuration:  Number((avgSessionDurationSec*1).toFixed(2))
+          avgSessionDuration: Number((avgSessionDurationSec * 1).toFixed(2))
         },
         message: "Success"
       };
@@ -1389,6 +1389,74 @@ class AdPlatformAuthenticator {
       return { metrics: {}, message: error.message || "Unknown error" };
     }
   }
+
+  /**
+   *  Fetch GA4 metrics (Sessions, Page Views, Users, Bounce Rate, Average Session Duration)
+   * @param {*} accessToken 
+   * @param {*} propertyId 
+   * @param {*} startDate 
+   * @param {*} endDate 
+   * @returns 
+   */
+  async getGoogleAnalyticsMonthlyMetrics(accessToken, propertyId, startDate, endDate) {
+    const today = new Date();
+    const defaultEnd = today.toISOString().slice(0, 10);
+
+    const defaultStartDate = new Date();
+    defaultStartDate.setFullYear(today.getFullYear() - 1);
+    const defaultStart = defaultStartDate.toISOString().slice(0, 10);
+
+    const url = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`;
+
+    const requestBody = {
+      dateRanges: [
+        { startDate: startDate || defaultStart, endDate: endDate || defaultEnd }
+      ],
+      metrics: [
+        { name: "sessions" },
+        { name: "activeUsers" },
+        { name: "screenPageViews" }
+      ],
+      dimensions: [
+        { name: "year" },
+        { name: "month" }
+      ],
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error fetching monthly metrics:", errorText);
+        return [];
+      }
+
+      const data = await response.json();
+      const rows = data.rows || [];
+
+      const results = rows.map((row) => ({
+        year: row.dimensionValues[0]?.value,
+        month: row.dimensionValues[1]?.value,
+        sessions: parseInt(row.metricValues[0]?.value ?? "0"),
+        users: parseInt(row.metricValues[1]?.value ?? "0"),
+        pageViews: parseInt(row.metricValues[2]?.value ?? "0")
+      }));
+
+      return results;
+    } catch (error) {
+      console.error("Error fetching monthly metrics:", error);
+      return [];
+    }
+  }
+
 
 }
 

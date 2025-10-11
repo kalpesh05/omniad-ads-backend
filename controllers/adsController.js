@@ -1,7 +1,7 @@
 const ConnectedAccount = require('../models/ConnectedAccount');
 const AdsManagerFactory = require('../services/adsManagerFactory');
 const AdPlatformAuthenticator = require('../utils/adsPlatformAuthenticator');
-const { queryToDateRange } = require('../utils/common');
+const { queryToDateRange, formatMonthlyDataForChart, getYearDateRange } = require('../utils/common');
 const {
     successResponse,
     errorResponse,
@@ -674,6 +674,44 @@ class AdsController {
         }
     }
 
+    // Controller for monthly chart metrics
+    static async getAnalyticsMonthlyChart(req, res) {
+        try {
+            const { year, propertyId } = req.query; // frontend should send year (e.g. "2025")
+            const userId = req.user.id;
+
+            const authenticator = new AdPlatformAuthenticator();
+            const accessToken = await authenticator.getValidAccessToken(userId, 'analytics');
+
+            if (!accessToken) {
+                return errorResponse(res, 'No valid analytics access token found. Please re-authenticate.');
+            }
+
+            const { startDate, endDate } = getYearDateRange(year);
+
+            // Fetch month-wise metrics
+            const monthlyMetrics = await authenticator.getGoogleAnalyticsMonthlyMetrics(
+                accessToken,
+                propertyId,
+                startDate,
+                endDate
+            );
+
+            // Prepare for chart (months as 'Jan', 'Feb', ...)
+            const monthlyChartData = formatMonthlyDataForChart(monthlyMetrics);
+
+            successResponse(res, {
+                platform: 'analytics',
+                propertyId,
+                year,
+                period: { startDate, endDate },
+                monthlyData: monthlyChartData
+            }, 'Analytics monthly chart data retrieved successfully');
+        } catch (error) {
+            console.error('Get Analytics Monthly Chart Error:', error);
+            errorResponse(res, 'Failed to retrieve analytics monthly chart data');
+        }
+    }
 
     // ===========================================
     // TARGETING HELPERS (Facebook specific)

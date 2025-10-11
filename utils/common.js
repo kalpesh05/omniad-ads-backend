@@ -35,4 +35,36 @@ function queryToDateRange(query) {
   };
 }
 
-module.exports = { queryToDateRange };
+/***
+ * Get date range for a year
+ * @param {number} year
+ * @returns {{startDate: string, endDate: string}}
+ */
+function getYearDateRange(year) {
+  return {
+    startDate: `${year}-01-01`,
+    endDate: `${year}-12-31`,
+  };
+}
+
+/**
+ * Converts raw GA4 monthly data to chart format
+ * @param {MonthlyMetric[]} data - Array from getGA4MonthlyMetrics
+ * @returns {Array<{month: string; sessions: number; users: number; pageViews: number}>}
+ */
+function formatMonthlyDataForChart(data) {
+  // Map month numbers to abbreviations
+  const monthAbbr = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  ];
+
+  // Create chart array
+  return data.map(item => ({
+    month: monthAbbr[parseInt(item.month, 10) - 1], // '1' -> Jan, etc.
+    sessions: item.sessions,
+    users: item.users,
+    pageViews: item.pageViews
+  }));
+}
+module.exports = { queryToDateRange, getYearDateRange, formatMonthlyDataForChart };
