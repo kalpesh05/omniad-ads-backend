@@ -1335,44 +1335,135 @@ class AdPlatformAuthenticator {
  * @param {string} endDate - 'YYYY-MM-DD'
  * @returns {Object} metrics data from GA4 Data API
  */
+  // async getGoogleAnalyticsMetrics(accessToken, propertyId, startDate, endDate) {
+  //   const url = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`;
+
+  //   const requestBody = {
+  //     dateRanges: [{ startDate, endDate }],
+  //     metrics: [
+  //       { name: "sessions" },
+  //       { name: "screenPageViews" },
+  //       { name: "activeUsers" },
+  //       { name: "bounceRate" },
+  //       { name: "averageSessionDuration" }
+  //     ]
+  //   };
+
+  //   try {
+  //     const response = await fetch(url, {
+  //       method: "POST",
+  //       headers: {
+  //         Authorization: `Bearer ${accessToken}`,
+  //         "Content-Type": "application/json"
+  //       },
+  //       body: JSON.stringify(requestBody)
+  //     });
+
+  //     if (!response.ok) {
+  //       const errorText = await response.text();
+  //       console.error(`Error fetching GA4 metrics:`, errorText);
+  //       return { metrics: {}, message: "Failed to fetch GA4 metrics" };
+  //     }
+
+  //     const data = await response.json();
+  //     const values = (data.rows && data.rows[0] && data.rows[0].metricValues) || [];
+  //     // Return result mapping metric names for clarity
+  //     let sessions = values[0]?.value || "0";
+  //     let pageViews = values[1]?.value || "0";
+  //     let users = values[2]?.value || "0";
+  //     let bounceRate = values[3]?.value || "0";
+  //     let avgSessionDurationSec = values[4]?.value || "0";
+
+  //     return {
+  //       metrics: {
+  //         sessions: parseInt(sessions),
+  //         pageViews: parseInt(pageViews),
+  //         users: parseInt(users),
+  //         bounceRate: Number((bounceRate * 100).toFixed(2)),
+  //         avgSessionDuration: Number((avgSessionDurationSec * 1).toFixed(2))
+  //       },
+  //       message: "Success"
+  //     };
+  //   } catch (error) {
+  //     console.error("Error fetching GA4 metrics:", error);
+  //     return { metrics: {}, message: error.message || "Unknown error" };
+  //   }
+  // }
   async getGoogleAnalyticsMetrics(accessToken, propertyId, startDate, endDate) {
     const url = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`;
 
-    const requestBody = {
+    // Main overview metrics
+    const overviewRequest = {
       dateRanges: [{ startDate, endDate }],
       metrics: [
         { name: "sessions" },
         { name: "screenPageViews" },
         { name: "activeUsers" },
         { name: "bounceRate" },
-        { name: "averageSessionDuration" }
+        { name: "averageSessionDuration" },
+        { name: "newUsers" } // direct newUsers
       ]
     };
 
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(requestBody)
-      });
+    // For returning users, use userType dimension (with activeUsers metric)
+    const userTypeRequest = {
+      dateRanges: [{ startDate, endDate }],
+      metrics: [{ name: "activeUsers" }],
+      dimensions: [{ name: "userType" }]
+    };
 
-      if (!response.ok) {
-        const errorText = await response.text();
+    try {
+      // Fetch both in parallel
+      const [overviewRes, userTypeRes] = await Promise.all([
+        fetch(url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(overviewRequest)
+        }),
+        fetch(url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(userTypeRequest)
+        })
+      ]);
+
+      if (!overviewRes.ok) {
+        const errorText = await overviewRes.text();
         console.error(`Error fetching GA4 metrics:`, errorText);
         return { metrics: {}, message: "Failed to fetch GA4 metrics" };
       }
+      if (!userTypeRes.ok) {
+        const errorText = await userTypeRes.text();
+        console.error(`Error fetching GA4 userType:`, errorText);
+        return { metrics: {}, message: "Failed to fetch GA4 returning users" };
+      }
 
-      const data = await response.json();
-      const values = (data.rows && data.rows[0] && data.rows[0].metricValues) || [];
-      // Return result mapping metric names for clarity
+      // Parse overview metrics
+      const overviewData = await overviewRes.json();
+      const values = (overviewData.rows && overviewData.rows[0] && overviewData.rows[0].metricValues) || [];
       let sessions = values[0]?.value || "0";
       let pageViews = values[1]?.value || "0";
       let users = values[2]?.value || "0";
       let bounceRate = values[3]?.value || "0";
       let avgSessionDurationSec = values[4]?.value || "0";
+      let newUsersCount = values[5]?.value || "0";
+
+      // Parse returning users from dimension query
+      const userTypeData = await userTypeRes.json();
+      let returningUsers = 0;
+      if (userTypeData.rows) {
+        userTypeData.rows.forEach(row => {
+          if (row.dimensionValues[0]?.value === "Returning") {
+            returningUsers = parseInt(row.metricValues[0]?.value ?? "0");
+          }
+        });
+      }
 
       return {
         metrics: {
@@ -1380,7 +1471,9 @@ class AdPlatformAuthenticator {
           pageViews: parseInt(pageViews),
           users: parseInt(users),
           bounceRate: Number((bounceRate * 100).toFixed(2)),
-          avgSessionDuration: Number((avgSessionDurationSec * 1).toFixed(2))
+          avgSessionDuration: Number((avgSessionDurationSec * 1).toFixed(2)),
+          newUsers: parseInt(newUsersCount),
+          returningUsers: returningUsers
         },
         message: "Success"
       };
@@ -1389,6 +1482,7 @@ class AdPlatformAuthenticator {
       return { metrics: {}, message: error.message || "Unknown error" };
     }
   }
+
 
   /**
    *  Fetch GA4 metrics (Sessions, Page Views, Users, Bounce Rate, Average Session Duration)
