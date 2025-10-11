@@ -737,7 +737,7 @@ class AdsController {
 
             // Format for chart
             const chartData = formatDeviceDistributionForChart(deviceData);
-            const percentagesData = addPercentageToData(chartData, sessions);
+            const percentagesData = addPercentageToData(chartData, "sessions");
             // Success response
             successResponse(res, {
                 platform: 'analytics',
@@ -773,7 +773,7 @@ class AdsController {
                 endDate
             );
 
-            const percentagesData = addPercentageToData(topBrowsers, usage);
+            const percentagesData = addPercentageToData(topBrowsers, "usage");
 
 
 
