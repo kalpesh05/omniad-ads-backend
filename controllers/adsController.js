@@ -782,7 +782,8 @@ class AdsController {
                 platform: 'analytics',
                 propertyId,
                 period: { startDate, endDate },
-                topBrowsers: percentagesData
+                topBrowsers: topBrowsers,
+                percentagesData: percentagesData
             }, 'Top browsers analytics data retrieved successfully');
         } catch (error) {
             console.error('Get Analytics Top Browsers Error:', error);
