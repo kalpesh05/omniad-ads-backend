@@ -1375,7 +1375,7 @@ router.get('/analytics/pages', authenticateToken, AdsController.getAnalyticsTopP
  *       200:
  *         description: Analytics device chart retrieved successfully
  */
-router.get('/analytics/device', authenticateToken, AdsController.getAnalyticsDeviceChart);
+router.get('/analytics/devices', authenticateToken, AdsController.getAnalyticsDeviceChart);
 
 /**
  * @swagger

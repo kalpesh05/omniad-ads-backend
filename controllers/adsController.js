@@ -810,15 +810,12 @@ class AdsController {
                 endDate
             );
 
-            // Format for chart
-            const chartData = formatTopPagesForChart(topPages);
-
             // Success response
             successResponse(res, {
                 platform: 'analytics',
                 propertyId,
                 period: { startDate, endDate },
-                topPages: chartData
+                topPages: topPages
             }, 'Top pages analytics data retrieved successfully');
         } catch (error) {
             console.error('Get Analytics Top Pages Error:', error);
