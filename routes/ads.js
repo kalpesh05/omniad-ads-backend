@@ -1396,7 +1396,7 @@ router.get('/analytics/devices', authenticateToken, AdsController.getAnalyticsDe
  *       200:
  *         description: Analytics top browsers retrieved successfully
  */
-router.get('/analytics/browser', authenticateToken, AdsController.getAnalyticsTopBrowsers);
+router.get('/analytics/browsers', authenticateToken, AdsController.getAnalyticsTopBrowsers);
 
 // ===========================================
 // FACEBOOK TARGETING ROUTES
