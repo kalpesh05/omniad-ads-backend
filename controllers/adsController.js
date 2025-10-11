@@ -1,7 +1,7 @@
 const ConnectedAccount = require('../models/ConnectedAccount');
 const AdsManagerFactory = require('../services/adsManagerFactory');
 const AdPlatformAuthenticator = require('../utils/adsPlatformAuthenticator');
-const { queryToDateRange, formatMonthlyDataForChart, getYearDateRange } = require('../utils/common');
+const { queryToDateRange, formatMonthlyDataForChart, getYearDateRange, sortMonthlyChartData } = require('../utils/common');
 const {
     successResponse,
     errorResponse,
@@ -699,13 +699,14 @@ class AdsController {
 
             // Prepare for chart (months as 'Jan', 'Feb', ...)
             const monthlyChartData = formatMonthlyDataForChart(monthlyMetrics);
+            const sortedMonthlyData = sortMonthlyChartData(monthlyChartData);
 
             successResponse(res, {
                 platform: 'analytics',
                 propertyId,
                 year,
                 period: { startDate, endDate },
-                monthlyData: monthlyChartData
+                monthlyData: sortedMonthlyData
             }, 'Analytics monthly chart data retrieved successfully');
         } catch (error) {
             console.error('Get Analytics Monthly Chart Error:', error);

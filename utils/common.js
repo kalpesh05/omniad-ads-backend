@@ -67,4 +67,13 @@ function formatMonthlyDataForChart(data) {
     pageViews: item.pageViews
   }));
 }
-module.exports = { queryToDateRange, getYearDateRange, formatMonthlyDataForChart };
+function sortMonthlyChartData(monthlyData) {
+  // Map month abbreviations to index
+  const monthOrder = {
+    Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+    Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
+  };
+  return monthlyData.sort((a, b) => monthOrder[a.month] - monthOrder[b.month]);
+}
+
+module.exports = { queryToDateRange, getYearDateRange, formatMonthlyDataForChart, sortMonthlyChartData };
