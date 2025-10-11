@@ -1431,7 +1431,9 @@ class AdPlatformAuthenticator {
       let newUsers = values[5]?.value || "0";
       // Approximate returning users:
       let returningUsers = parseInt(users) - parseInt(newUsers);
-
+      let newUsersPercentage = parseInt(users) > 0
+        ? Number((parseInt(newUsers) / parseInt(users) * 100).toFixed(2))
+        : 0;
       return {
         metrics: {
           sessions: parseInt(sessions),
@@ -1440,7 +1442,8 @@ class AdPlatformAuthenticator {
           bounceRate: Number((bounceRate * 100).toFixed(2)),
           avgSessionDuration: Number((avgSessionDurationSec * 1).toFixed(2)),
           newUsers: parseInt(newUsers),
-          returningUsers: returningUsers > 0 ? returningUsers : 0
+          returningUsers: returningUsers > 0 ? returningUsers : 0,
+          newUsersPercentage:newUsersPercentage
         },
         message: "Success"
       };
