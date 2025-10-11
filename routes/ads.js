@@ -1335,6 +1335,69 @@ router.get('/analytics/overview', authenticateToken, AdsController.getAnalyticsM
  */
 router.get('/analytics/chart', authenticateToken, AdsController.getAnalyticsMonthlyChart);
 
+/**
+ * @swagger
+ * /api/ads/analytics/pages:
+ *   get:
+ *     summary: Get Google Analytics top pages
+ *     tags: [Google Analytics Specific]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Google Analytics property ID
+ *     responses:
+ *       200:
+ *         description: Analytics top pages retrieved successfully
+ */
+router.get('/analytics/pages', authenticateToken, AdsController.getAnalyticsTopPages);
+
+/**
+ * @swagger
+ * /api/ads/analytics/device:
+ *   get:
+ *     summary: Get Google Analytics device chart
+ *     tags: [Google Analytics Specific]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Google Analytics property ID
+ *     responses:
+ *       200:
+ *         description: Analytics device chart retrieved successfully
+ */
+router.get('/analytics/device', authenticateToken, AdsController.getAnalyticsDeviceChart);
+
+/**
+ * @swagger
+ * /api/ads/analytics/browsers:
+ *   get:
+ *     summary: Get Google Analytics top browsers
+ *     tags: [Google Analytics Specific]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Google Analytics property ID
+ *     responses:
+ *       200:
+ *         description: Analytics top browsers retrieved successfully
+ */
+router.get('/analytics/browser', authenticateToken, AdsController.getAnalyticsTopBrowsers);
+
 // ===========================================
 // FACEBOOK TARGETING ROUTES
 // ===========================================

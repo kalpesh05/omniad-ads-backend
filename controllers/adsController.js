@@ -1,7 +1,7 @@
 const ConnectedAccount = require('../models/ConnectedAccount');
 const AdsManagerFactory = require('../services/adsManagerFactory');
 const AdPlatformAuthenticator = require('../utils/adsPlatformAuthenticator');
-const { queryToDateRange, formatMonthlyDataForChart, getYearDateRange, sortMonthlyChartData } = require('../utils/common');
+const { queryToDateRange, formatMonthlyDataForChart, getYearDateRange, sortMonthlyChartData, formatDeviceDistributionForChart } = require('../utils/common');
 const {
     successResponse,
     errorResponse,
@@ -711,6 +711,118 @@ class AdsController {
         } catch (error) {
             console.error('Get Analytics Monthly Chart Error:', error);
             errorResponse(res, 'Failed to retrieve analytics monthly chart data');
+        }
+    }
+    // Controller for device distribution
+    static async getAnalyticsDeviceChart(req, res) {
+        try {
+            const { propertyId, year } = req.query;
+            const userId = req.user.id;
+
+            // Auth & token
+            const authenticator = new AdPlatformAuthenticator();
+            const accessToken = await authenticator.getValidAccessToken(userId, 'analytics');
+            if (!accessToken) {
+                return errorResponse(res, 'No valid analytics access token found. Please re-authenticate.');
+            }
+            const { startDate, endDate } = getYearDateRange(year);
+
+            // Fetch device distribution
+            const deviceData = await authenticator.getGoogleAnalyticsDeviceDistribution(
+                accessToken,
+                propertyId,
+                startDate,
+                endDate
+            );
+
+            // Format for chart
+            const chartData = formatDeviceDistributionForChart(deviceData);
+
+            // Success response
+            successResponse(res, {
+                platform: 'analytics',
+                propertyId,
+                period: { startDate, endDate },
+                deviceDistribution: chartData
+            }, 'Device distribution analytics data retrieved successfully');
+        } catch (error) {
+            console.error('Get Analytics Device Chart Error:', error);
+            errorResponse(res, 'Failed to retrieve analytics device chart data');
+        }
+    }
+
+    // Controller for top browsers
+    static async getAnalyticsTopBrowsers(req, res) {
+        try {
+            const { propertyId, year } = req.query;
+            const userId = req.user.id;
+
+            // Auth & token
+            const authenticator = new AdPlatformAuthenticator();
+            const accessToken = await authenticator.getValidAccessToken(userId, 'analytics');
+            if (!accessToken) {
+                return errorResponse(res, 'No valid analytics access token found. Please re-authenticate.');
+            }
+            const { startDate, endDate } = getYearDateRange(year);
+
+            // Fetch top browsers
+            const topBrowsers = await authenticator.getGoogleAnalyticsBrowserDistribution(
+                accessToken,
+                propertyId,
+                startDate,
+                endDate
+            );
+
+
+
+            // Success response
+            successResponse(res, {
+                platform: 'analytics',
+                propertyId,
+                period: { startDate, endDate },
+                topBrowsers: topBrowsers
+            }, 'Top browsers analytics data retrieved successfully');
+        } catch (error) {
+            console.error('Get Analytics Top Browsers Error:', error);
+            errorResponse(res, 'Failed to retrieve analytics top browsers data');
+        }
+    }
+
+    // Controller for top pages
+    static async getAnalyticsTopPages(req, res) {
+        try {
+            const { propertyId, year } = req.query;
+            const userId = req.user.id;
+
+            // Auth & token
+            const authenticator = new AdPlatformAuthenticator();
+            const accessToken = await authenticator.getValidAccessToken(userId, 'analytics');
+            if (!accessToken) {
+                return errorResponse(res, 'No valid analytics access token found. Please re-authenticate.');
+            }
+            const { startDate, endDate } = getYearDateRange(year);
+
+            // Fetch top pages
+            const topPages = await authenticator.getGoogleAnalyticsTopPages(
+                accessToken,
+                propertyId,
+                startDate,
+                endDate
+            );
+
+            // Format for chart
+            const chartData = formatTopPagesForChart(topPages);
+
+            // Success response
+            successResponse(res, {
+                platform: 'analytics',
+                propertyId,
+                period: { startDate, endDate },
+                topPages: chartData
+            }, 'Top pages analytics data retrieved successfully');
+        } catch (error) {
+            console.error('Get Analytics Top Pages Error:', error);
+            errorResponse(res, 'Failed to retrieve analytics top pages data');
         }
     }
 

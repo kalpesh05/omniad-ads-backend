@@ -1457,6 +1457,148 @@ class AdPlatformAuthenticator {
     }
   }
 
+  /**
+   * Fetches sessions by device category for a GA4 property and date range.
+   * @param {string} accessToken - Google OAuth token
+   * @param {string} propertyId - GA4 property ID
+   * @param {string} startDate - 'YYYY-MM-DD'
+   * @param {string} endDate - 'YYYY-MM-DD'
+   * @returns {Array} - Array of device distribution data
+   */
+  async getGoogleAnalyticsDeviceDistribution(accessToken, propertyId, startDate, endDate) {
+    const url = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`;
+
+    const requestBody = {
+      dateRanges: [{ startDate, endDate }],
+      metrics: [{ name: "sessions" }],
+      dimensions: [{ name: "deviceCategory" }]
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error fetching device distribution:", errorText);
+        return [];
+      }
+
+      const data = await response.json();
+      const rows = data.rows || [];
+
+      return rows.map((row) => ({
+        deviceCategory: row.dimensionValues[0]?.value,
+        sessions: parseInt(row.metricValues[0]?.value ?? "0")
+      }));
+    } catch (error) {
+      console.error("Error fetching device distribution:", error);
+      return [];
+    }
+  }
+
+
+
+  /**
+   * Fetches top pages by sessions for a GA4 property and date range.
+   * Change metrics field to "screenPageViews" if you want page views instead of sessions.
+   * @param {string} accessToken - Google OAuth token
+   * @param {string} propertyId - GA4 property ID
+   * @param {string} startDate - 'YYYY-MM-DD'
+   * @param {string} endDate - 'YYYY-MM-DD'
+   * @param {number} limit - Number of top pages to fetch (default: 10)
+   * @returns {Array} - Array of top page data
+   */
+  async getGoogleAnalyticsTopPages(accessToken, propertyId, startDate, endDate, limit = 10) {
+    const url = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`;
+
+    const requestBody = {
+      dateRanges: [{ startDate, endDate }],
+      metrics: [{ name: "sessions" }], // or "screenPageViews"
+      dimensions: [{ name: "pagePath" }],
+      orderBys: [{
+        metric: { metricName: "sessions" },
+        desc: true
+      }],
+      limit
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error fetching top pages:", errorText);
+        return [];
+      }
+
+      const data = await response.json();
+      const rows = data.rows || [];
+
+      return rows.map((row) => ({
+        page: row.dimensionValues[0]?.value,
+        value: parseInt(row.metricValues[0]?.value ?? "0")
+      }));
+    } catch (error) {
+      console.error("Error fetching top pages:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Fetches sessions by browser for a GA4 property and date range.
+   */
+  async getGoogleAnalyticsBrowserDistribution(accessToken, propertyId, startDate, endDate) {
+    const url = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`;
+
+    const requestBody = {
+      dateRanges: [{ startDate, endDate }],
+      metrics: [{ name: "sessions" }],
+      dimensions: [{ name: "browser" }]
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error fetching browser distribution:", errorText);
+        return [];
+      }
+
+      const data = await response.json();
+      const rows = data.rows || [];
+
+      return rows.map((row) => ({
+        browser: row.dimensionValues[0]?.value,
+        usage: parseInt(row.metricValues[0]?.value ?? "0")
+      }));
+    } catch (error) {
+      console.error("Error fetching browser distribution:", error);
+      return [];
+    }
+  }
+
 
 }
 

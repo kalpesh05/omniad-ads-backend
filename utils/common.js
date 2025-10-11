@@ -76,4 +76,28 @@ function sortMonthlyChartData(monthlyData) {
   return monthlyData.sort((a, b) => monthOrder[a.month] - monthOrder[b.month]);
 }
 
-module.exports = { queryToDateRange, getYearDateRange, formatMonthlyDataForChart, sortMonthlyChartData };
+function formatDeviceDistributionForChart(deviceMetrics) {
+  const colorMap = {
+    desktop: 'hsl(var(--primary))',
+    mobile: 'hsl(var(--accent))',
+    tablet: 'hsl(var(--secondary))'
+  };
+
+  // Map deviceCategory from GA4 to formatted name & color
+  const nameMap = {
+    desktop: 'Desktop',
+    mobile: 'Mobile',
+    tablet: 'Tablet'
+  };
+
+  // Output in [ { name, value, color } ] format
+  return deviceMetrics.map(device => ({
+    name: nameMap[device.deviceCategory.toLowerCase()] || device.deviceCategory,
+    value: device.sessions,
+    color: colorMap[device.deviceCategory.toLowerCase()] || 'hsl(var(--primary))'
+  }));
+}
+
+
+
+module.exports = { queryToDateRange, getYearDateRange, formatMonthlyDataForChart, sortMonthlyChartData, formatDeviceDistributionForChart };
