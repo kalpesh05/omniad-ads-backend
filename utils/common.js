@@ -93,11 +93,26 @@ function formatDeviceDistributionForChart(deviceMetrics) {
   // Output in [ { name, value, color } ] format
   return deviceMetrics.map(device => ({
     name: nameMap[device.deviceCategory.toLowerCase()] || device.deviceCategory,
-    value: device.sessions,
+    sessions: device.sessions,
     color: colorMap[device.deviceCategory.toLowerCase()] || 'hsl(var(--primary))'
+  }));
+}
+
+/**
+ * Adds percentage field to each object in an array, based on their 'count' or 'value' property.
+ * @param {Array} data - Array of objects with 'count' or 'value'
+ * @param {String} field - Field to base percentage (default: 'count')
+ * @returns {Array} - New array with 'percentage' field added
+ */
+function addPercentageToData(data, field = 'count') {
+  const total = data.reduce((sum, item) => sum + Number(item[field] ?? 0), 0);
+  // Output new array with percentage field
+  return data.map(item => ({
+    ...item,
+    value: total ? Number(((Number(item[field] ?? 0) / total) * 100).toFixed(2)) : 0
   }));
 }
 
 
 
-module.exports = { queryToDateRange, getYearDateRange, formatMonthlyDataForChart, sortMonthlyChartData, formatDeviceDistributionForChart };
+module.exports = { queryToDateRange, getYearDateRange, formatMonthlyDataForChart, sortMonthlyChartData, formatDeviceDistributionForChart, addPercentageToData };

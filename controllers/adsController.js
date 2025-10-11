@@ -1,7 +1,7 @@
 const ConnectedAccount = require('../models/ConnectedAccount');
 const AdsManagerFactory = require('../services/adsManagerFactory');
 const AdPlatformAuthenticator = require('../utils/adsPlatformAuthenticator');
-const { queryToDateRange, formatMonthlyDataForChart, getYearDateRange, sortMonthlyChartData, formatDeviceDistributionForChart } = require('../utils/common');
+const { queryToDateRange, formatMonthlyDataForChart, getYearDateRange, sortMonthlyChartData, formatDeviceDistributionForChart, addPercentageToData } = require('../utils/common');
 const {
     successResponse,
     errorResponse,
@@ -737,13 +737,13 @@ class AdsController {
 
             // Format for chart
             const chartData = formatDeviceDistributionForChart(deviceData);
-
+            const percentagesData = addPercentageToData(chartData, sessions);
             // Success response
             successResponse(res, {
                 platform: 'analytics',
                 propertyId,
                 period: { startDate, endDate },
-                deviceDistribution: chartData
+                deviceDistribution: percentagesData
             }, 'Device distribution analytics data retrieved successfully');
         } catch (error) {
             console.error('Get Analytics Device Chart Error:', error);
@@ -773,6 +773,8 @@ class AdsController {
                 endDate
             );
 
+            const percentagesData = addPercentageToData(topBrowsers, usage);
+
 
 
             // Success response
@@ -780,7 +782,7 @@ class AdsController {
                 platform: 'analytics',
                 propertyId,
                 period: { startDate, endDate },
-                topBrowsers: topBrowsers
+                topBrowsers: percentagesData
             }, 'Top browsers analytics data retrieved successfully');
         } catch (error) {
             console.error('Get Analytics Top Browsers Error:', error);
