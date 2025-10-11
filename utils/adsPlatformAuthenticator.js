@@ -1371,7 +1371,7 @@ class AdPlatformAuthenticator {
       let sessions = values[0]?.value || "0";
       let pageViews = values[1]?.value || "0";
       let users = values[2]?.value || "0";
-      let bouncRate =   values[3]?.value || "0";
+      let bounceRate =   values[3]?.value || "0";
       let avgSessionDurationSec = values[4]?.value || "0";
 
       return {
@@ -1379,7 +1379,7 @@ class AdPlatformAuthenticator {
           sessions: parseInt(sessions),
           pageViews: parseInt(pageViews),
           users: parseInt(users),
-          bouncRate: Number((bouncRate * 100).toFixed(2)),
+          bounceRate: Number((bounceRate * 100).toFixed(2)),
           avgSessionDuration:  Number((avgSessionDurationSec / 60).toFixed(2))
         },
         message: "Success"
