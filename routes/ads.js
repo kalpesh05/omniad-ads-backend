@@ -1333,7 +1333,7 @@ router.get('/analytics/overview', authenticateToken, AdsController.getAnalyticsM
  *       200:
  *         description: Analytics charts retrieved successfully
  */
-router.get('/analytics/charts', authenticateToken, AdsController.getAnalyticsMonthlyChart);
+router.get('/analytics/chart', authenticateToken, AdsController.getAnalyticsMonthlyChart);
 
 // ===========================================
 // FACEBOOK TARGETING ROUTES
