@@ -80,21 +80,23 @@ function formatDeviceDistributionForChart(deviceMetrics) {
   const colorMap = {
     desktop: 'hsl(var(--primary))',
     mobile: 'hsl(var(--accent))',
-    tablet: 'hsl(var(--secondary))'
+    tablet: 'hsl(var(--chart-2))',
+    smarttv: 'hsl(var(--chart-3))',
   };
 
   // Map deviceCategory from GA4 to formatted name & color
   const nameMap = {
     desktop: 'Desktop',
     mobile: 'Mobile',
-    tablet: 'Tablet'
+    tablet: 'Tablet',
+    smarttv: 'Smart Tv',
   };
 
   // Output in [ { name, value, color } ] format
   return deviceMetrics.map(device => ({
-    name: nameMap[device.deviceCategory.toLowerCase()] || device.deviceCategory,
+    name: nameMap[device.deviceCategory.replace(" ","").toLowerCase()] || device.deviceCategory,
     sessions: device.sessions,
-    color: colorMap[device.deviceCategory.toLowerCase()] || 'hsl(var(--primary))'
+    color: colorMap[device.deviceCategory.replace(" ","").toLowerCase()] || 'hsl(var(--primary))'
   }));
 }
 
