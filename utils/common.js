@@ -64,7 +64,7 @@ function formatMonthlyDataForChart(data) {
     month: monthAbbr[parseInt(item.month, 10) - 1], // '1' -> Jan, etc.
     sessions: item.sessions,
     users: item.users,
-    pageViews: item.pageViews
+    pageviews: item.pageViews
   }));
 }
 function sortMonthlyChartData(monthlyData) {
