@@ -1550,7 +1550,7 @@ class AdPlatformAuthenticator {
 
       return rows.map((row) => ({
         page: row.dimensionValues[0]?.value,
-        value: parseInt(row.metricValues[0]?.value ?? "0")
+        views: parseInt(row.metricValues[0]?.value ?? "0")
       }));
     } catch (error) {
       console.error("Error fetching top pages:", error);
