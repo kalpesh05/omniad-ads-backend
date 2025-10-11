@@ -1380,7 +1380,7 @@ class AdPlatformAuthenticator {
           pageViews: parseInt(pageViews),
           users: parseInt(users),
           bounceRate: Number((bounceRate * 100).toFixed(2)),
-          avgSessionDuration:  Number(avgSessionDurationSec).toFixed(2)
+          avgSessionDuration:  Number((avgSessionDurationSec*1).toFixed(2))
         },
         message: "Success"
       };
