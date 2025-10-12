@@ -1443,7 +1443,7 @@ class AdPlatformAuthenticator {
           avgSessionDuration: Number((avgSessionDurationSec * 1).toFixed(2)),
           newUsers: parseInt(newUsers),
           returningUsers: returningUsers > 0 ? returningUsers : 0,
-          newUsersPercentage:newUsersPercentage
+          newUsersPercentage: newUsersPercentage
         },
         message: "Success"
       };
@@ -1663,6 +1663,275 @@ class AdPlatformAuthenticator {
     }
   }
 
+  /**
+   * 
+   * @param {*} accessToken 
+   * @param {*} propertyId 
+   * @param {*} startDate 
+   * @param {*} endDate 
+   * @param {*} dimensions 
+   * @param {*} metrics 
+   * @returns 
+   */
+  async runGoogleAnalyticsReport(accessToken, propertyId, startDate, endDate, dimensions = [], metrics = []) {
+    const url = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`;
+    const body = {
+      dateRanges: [
+        { startDate, endDate }
+      ],
+      dimensions: dimensions.map(name => ({ name })),
+      metrics: metrics.map(name => ({ name }))
+    };
+
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error(`runReport failed: ${resp.status} ${errText}`);
+    }
+    const json = await resp.json();
+    return json;  // contains `rows`, `dimensionHeaders`, `metricHeaders`, etc
+  }
+
+
+  /**
+   * 
+   * @param {*} accessToken 
+   * @param {*} propertyId 
+   * @param {*} dimensions 
+   * @param {*} metrics 
+   * @returns
+  */
+  async runGoogleAnalyticsRealtimeReport(accessToken, propertyId, dimensions = [], metrics = []) {
+    const url = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runRealtimeReport`;
+    const body = {
+      dimensions: dimensions.map(name => ({ name })),
+      metrics: metrics.map(name => ({ name }))
+    };
+
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error(`runRealtimeReport failed: ${resp.status} ${errText}`);
+    }
+    return await resp.json();
+  }
+
+  /**
+   * 
+   * @param {*} accessToken 
+   * @param {*} propertyId 
+   * @param {*} startDate 
+   * @param {*} endDate 
+   * @param {*} dimensions 
+   * @param {*} metrics 
+   * @param {*} pivots 
+   * @returns 
+   */
+  async runGoogleAnalyticsPivotReport(accessToken, propertyId, startDate, endDate, dimensions = [], metrics = [], pivots = []) {
+    const url = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runPivotReport`;
+    const body = {
+      dateRanges: [{ startDate, endDate }],
+      dimensions: dimensions.map(name => ({ name })),
+      metrics: metrics.map(name => ({ name })),
+      pivots: pivots.map(p => ({
+        fieldNames: p.fieldNames,    // e.g. ["deviceCategory"]
+        limit: p.limit || 10,
+        offset: p.offset || 0
+      }))
+    };
+
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error(`runPivotReport failed: ${resp.status} ${errText}`);
+    }
+    return await resp.json();
+  }
+
+  /**
+   * 
+   * @param {*} accessToken 
+   * @param {*} propertyId 
+   * @param {*} requests 
+   * @returns 
+   */
+  async runGoogleAnalyticsbatchRunReports(accessToken, propertyId, requests = []) {
+    const url = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:batchRunReports`;
+    const body = {
+      requests: requests.map(r => ({
+        dateRanges: r.dateRanges,
+        dimensions: (r.dimensions || []).map(name => ({ name })),
+        metrics: (r.metrics || []).map(name => ({ name })),
+        // optional: filters, orderBys, limits, etc
+      }))
+    };
+
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error(`batchRunReports failed: ${resp.status} ${errText}`);
+    }
+    return await resp.json();  // contains `reports` array
+  }
+
+  /**
+   * 
+   * @param {*} accessToken 
+   * @param {*} propertyId 
+   * @returns
+   */
+  async getGaPropertyMetadata(accessToken, propertyId) {
+    const url = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}/metadata`;
+    const resp = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`
+      }
+    });
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error(`getMetadata failed: ${resp.status} ${errText}`);
+    }
+    return await resp.json();  // has `dimensions`, `metrics` metadata
+  }
+
+
+  async getGoogleAnalyticsReport(accessToken, propertyId, startDate, endDate, reportType, reportName, description) {
+    const { dimensions, metrics } = getReportSchema(reportType);
+    const report = await this.runGoogleAnalyticsReport(
+      accessToken,
+      propertyId,
+      startDate,
+      endDate,
+      dimensions,
+      metrics
+    );
+
+    report.reportType = reportType;
+    report.reportName = reportName;
+    report.description = description;
+     
+    
+    return report;
+  }
+
+
+
+  async getReportSchema(reportType) {
+    switch (reportType) {
+      case "traffic":
+        return {
+          dimensions: [
+            "sessionSource",
+            "sessionMedium",
+            "sessionDefaultChannelGroup",
+            "deviceCategory",
+            "country",
+            "landingPage"
+          ],
+          metrics: [
+            "sessions",
+            "totalUsers",
+            "newUsers",
+            "engagedSessions",
+            "averageSessionDuration",
+            "bounceRate"
+          ]
+        };
+
+      case "users":
+        return {
+          dimensions: [
+            "firstUserSource",
+            "firstUserMedium",
+            "country",
+            "deviceCategory",
+            "newVsReturning",
+            "language"
+          ],
+          metrics: [
+            "totalUsers",
+            "newUsers",
+            "activeUsers",
+            "engagedSessions",
+            "eventCount",
+            "averageSessionDuration"
+          ]
+        };
+
+      case "content":
+        return {
+          dimensions: [
+            "pagePath",
+            "pageTitle",
+            "landingPage",
+            "deviceCategory",
+            "country"
+          ],
+          metrics: [
+            "views",
+            "eventCount",
+            "engagedSessions",
+            "averageSessionDuration",
+            "bounceRate"
+          ]
+        };
+
+      case "conversion":
+        return {
+          dimensions: [
+            "sessionSource",
+            "sessionMedium",
+            "sessionDefaultChannelGroup",
+            "deviceCategory",
+            "country",
+            "eventName"
+          ],
+          metrics: [
+            "conversions",
+            "sessionsWithConversions",
+            "conversionRate",
+            "totalUsers",
+            "newUsers"
+          ]
+        };
+
+      default:
+        throw new Error(`Unknown reportType: ${reportType}`);
+    }
+  }
 
 }
 

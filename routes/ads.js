@@ -1398,6 +1398,46 @@ router.get('/analytics/devices', authenticateToken, AdsController.getAnalyticsDe
  */
 router.get('/analytics/browsers', authenticateToken, AdsController.getAnalyticsTopBrowsers);
 
+/**
+ * @swagger
+ * /api/ads/analytics/reports/generate:
+ *   post:
+ *     summary: Generate Google Analytics report
+ *     tags: [Google Analytics Specific]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: true
+ *             properties:
+ *               propertyId:
+ *                 type: string
+ *                 description: Google Analytics property ID  
+ *               startDate:
+ *                 type: string
+ *                 description: Start date for report
+ *               endDate:
+ *                 type: string
+ *                 description: End date for report
+ *               reportType:
+ *                 type: string
+ *                 description: Type of report to generate
+ *               reportName:
+ *                 type: string
+ *                 description: Name of report
+ *               description:
+ *                 type: string
+ *                 description: Description of report
+ *     responses:
+ *       200:
+ *         description: Analytics report generated successfully  
+ */
+router.post('/analytics/reports/generate', authenticateToken, AdsController.getAnalyticsReport);
+
 // ===========================================
 // FACEBOOK TARGETING ROUTES
 // ===========================================

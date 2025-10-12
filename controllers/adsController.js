@@ -751,6 +751,43 @@ class AdsController {
         }
     }
 
+    // Controller for genarte report
+    static async getAnalyticsReport(req, res) {
+        try {
+            const { propertyId, startDate, endDate, reportType,reportName, description } = req.query;
+            const userId = req.user.id; 
+
+            // Auth & token
+            const authenticator = new AdPlatformAuthenticator();
+            const accessToken = await authenticator.getValidAccessToken(userId, 'analytics');
+            if (!accessToken) {
+                return errorResponse(res, 'No valid analytics access token found. Please re-authenticate.');
+            }
+
+            // Fetch report
+            const report = await authenticator.getGoogleAnalyticsReport(
+                accessToken,
+                propertyId,
+                startDate,
+                endDate,
+                reportType,
+                reportName,
+                description
+            );  
+
+            // Success response
+            successResponse(res, {
+                platform: 'analytics',
+                propertyId,
+                period: { startDate, endDate },
+                report
+            }, 'Report analytics data retrieved successfully');
+        } catch (error) {
+            console.error('Get Analytics Report Error:', error);
+            errorResponse(res, 'Failed to retrieve analytics report data');
+        }
+    }
+    
     // Controller for top browsers
     static async getAnalyticsTopBrowsers(req, res) {
         try {
