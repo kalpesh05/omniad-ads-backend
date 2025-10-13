@@ -255,6 +255,19 @@ const initializeDatabase = async () => {
         UNIQUE KEY unique_analytics_per_user_platform_metric_date (user_id, platform, metric, date)
       )
     `);
+
+    // Store selected properties
+    await promisePool.execute(`
+      CREATE TABLE IF NOT EXISTS selected_properties (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        property_id VARCHAR(50) NOT NULL,  
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_selected_properties_per_user_platform_property (user_id, property_id)
+      )
+    `);
     // eslint-disable-next-line no-console
     console.log('�� Database tables created successfully');
 

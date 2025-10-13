@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const PropertySelector = require('../models/PropertySelector');
 const RefreshToken = require('../models/RefreshToken');
 const { generateToken } = require('../utils/jwt');
 const {
@@ -161,8 +162,11 @@ class AuthController {
     try {
       const user = req.user;
 
+      let propertySelector = await PropertySelector.findByUser(user.id);
+
       successResponse(res, {
-        user: user.toJSON()
+        user: user.toJSON(),
+        property: propertySelector
       }, 'Profile retrieved successfully');
 
     } catch (error) {
@@ -235,6 +239,30 @@ class AuthController {
       errorResponse(res, 'Failed to change password');
     }
   }
-}
+
+  static async saveProperty(req, res) {
+    try {
+      const userId = req.user.id;
+      const { property } = req.body;
+
+      // Check if property already exists
+      const existingProperty = await PropertySelector.findByUser(userId);
+      if (existingProperty) {
+        return conflictResponse(res, 'Property already exists');
+      }
+
+      // Create new property
+      const newProperty = await PropertySelector.upsert({ user_id: userId, property_id: property });
+
+      successResponse(res, {
+        property: newProperty
+      }, 'Property saved successfully');
+
+    } catch (error) {
+      console.error('Save property error:', error);
+      errorResponse(res, 'Failed to save property');
+    }
+  }
+} 
 
 module.exports = AuthController;

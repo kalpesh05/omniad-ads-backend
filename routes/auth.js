@@ -185,4 +185,32 @@ router.put('/profile', authenticateToken, AuthController.updateProfile);
  */
 router.put('/change-password', authenticateToken, validatePasswordChange, AuthController.changePassword);
 
+
+/**
+ * @swagger
+ * /api/auth/propety-save:
+ *   post:
+ *     summary: Save user property
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               property:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Property saved successfully
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ */
+router.post('/propety-save', authenticateToken,validationSaveProperties, AuthController.saveProperty);
+
 module.exports = router;

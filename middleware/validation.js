@@ -251,6 +251,14 @@ const validateGetInsights = [
   handleValidationErrors
 ];
 
+const validationSaveProperties = [
+  body('property')
+    .optional()
+    .isObject()
+    .withMessage('Properties must be an object'),
+  handleValidationErrors
+];
+
 module.exports = {
   validateRegistration,
   validateLogin,
@@ -262,5 +270,6 @@ module.exports = {
   validateUpdateCampaign,
   validateCreateAdSet,
   validateCreateAd,
-  validateGetInsights
+  validateGetInsights,
+  validationSaveProperties
 };
