@@ -1842,14 +1842,15 @@ class AdPlatformAuthenticator {
     report.reportType = reportType;
     report.reportName = reportName;
     report.description = description;
-     
-    
+
+
     return report;
   }
 
 
 
-  async getReportSchema(reportType) {
+
+  getReportSchema(reportType) {
     switch (reportType) {
       case "traffic":
         return {
@@ -1870,27 +1871,22 @@ class AdPlatformAuthenticator {
             "bounceRate"
           ]
         };
-
       case "users":
         return {
           dimensions: [
             "firstUserSource",
             "firstUserMedium",
-            "country",
-            "deviceCategory",
             "newVsReturning",
-            "language"
+            "country",
+            "deviceCategory"
           ],
           metrics: [
             "totalUsers",
             "newUsers",
-            "activeUsers",
             "engagedSessions",
-            "eventCount",
-            "averageSessionDuration"
+            "eventCount"
           ]
         };
-
       case "content":
         return {
           dimensions: [
@@ -1901,14 +1897,13 @@ class AdPlatformAuthenticator {
             "country"
           ],
           metrics: [
-            "views",
+            "screenPageViews",
             "eventCount",
             "engagedSessions",
             "averageSessionDuration",
             "bounceRate"
           ]
         };
-
       case "conversion":
         return {
           dimensions: [
@@ -1923,15 +1918,26 @@ class AdPlatformAuthenticator {
             "conversions",
             "sessionsWithConversions",
             "conversionRate",
-            "totalUsers",
-            "newUsers"
+            "totalUsers"
           ]
         };
-
+      case "realtime":
+        return {
+          dimensions: [
+            "deviceCategory",
+            "country"
+          ],
+          metrics: [
+            "activeUsers",
+            "eventCount",
+            "screenPageViews"
+          ]
+        };
       default:
-        throw new Error(`Unknown reportType: ${reportType}`);
+        throw new Error(`Unsupported report type: ${reportType}`);
     }
   }
+
 
 }
 
