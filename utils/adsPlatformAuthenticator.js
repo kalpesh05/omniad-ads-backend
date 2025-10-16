@@ -1938,6 +1938,21 @@ class AdPlatformAuthenticator {
     }
   }
 
+  chooseApiEndpoint(reportType) {
+    switch (reportType) {
+      case "realtime":
+        return "runRealtimeReport";
+      // You might want content or conversion to use pivot mode in some cases
+      // but for now use runReport for most:
+      case "traffic":
+      case "users":
+      case "content":
+      case "conversion":
+        return "runReport";
+      default:
+        throw new Error(`No API mapping for report type: ${reportType}`);
+    }
+  }
 
 }
 
