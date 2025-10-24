@@ -4,7 +4,8 @@ const { authenticateToken } = require('../middleware/auth');
 const {
   validateRegistration,
   validateLogin,
-  validatePasswordChange
+  validatePasswordChange,
+  validationSaveProperties
 } = require('../middleware/validation');
 
 const router = express.Router();
