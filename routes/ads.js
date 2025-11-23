@@ -1638,6 +1638,584 @@ router.get('/:platform/accounts/:accountId/:objectId/insights', authenticateToke
  */
 router.put('/:platform/accounts/:accountId/campaigns/bulk/status', authenticateToken, AdsController.bulkUpdateCampaignStatus);
 
+// ===========================================
+// CONVERSION ANALYTICS
+// ===========================================
 
+/**
+ * @swagger
+ * /api/ads/analytics/conversions/funnel:
+ *   get:
+ *     summary: Get conversion funnel analytics
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: dateRange
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Conversion funnel retrieved successfully
+ */
+router.get('/analytics/conversions/funnel', authenticateToken, AdsController.getConversionFunnel);
+
+/**
+ * @swagger
+ * /api/ads/analytics/conversions/by-source:
+ *   get:
+ *     summary: Get conversions by source
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: dateRange
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Conversions by source retrieved successfully
+ */
+router.get('/analytics/conversions/by-source', authenticateToken, AdsController.getConversionsBySource);
+
+/**
+ * @swagger
+ * /api/ads/analytics/conversions/goals:
+ *   get:
+ *     summary: Get conversion goals
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: dateRange
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Conversion goals retrieved successfully
+ */
+router.get('/analytics/conversions/goals', authenticateToken, AdsController.getConversionGoals);
+
+// ===========================================
+// REVENUE ANALYTICS
+// ===========================================
+
+/**
+ * @swagger
+ * /api/ads/analytics/revenue/by-channel:
+ *   get:
+ *     summary: Get revenue by channel
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: dateRange
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Revenue by channel retrieved successfully
+ */
+router.get('/analytics/revenue/by-channel', authenticateToken, AdsController.getRevenueByChannel);
+
+/**
+ * @swagger
+ * /api/ads/analytics/revenue/campaigns:
+ *   get:
+ *     summary: Get revenue by campaigns
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: dateRange
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Revenue by campaigns retrieved successfully
+ */
+router.get('/analytics/revenue/campaigns', authenticateToken, AdsController.getRevenueByCampaigns);
+
+/**
+ * @swagger
+ * /api/ads/analytics/revenue/ltv:
+ *   get:
+ *     summary: Get lifetime value analytics
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: dateRange
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Lifetime value retrieved successfully
+ */
+router.get('/analytics/revenue/ltv', authenticateToken, AdsController.getLifetimeValue);
+
+// ===========================================
+// CUSTOM EVENTS
+// ===========================================
+
+/**
+ * @swagger
+ * /api/ads/analytics/events/custom:
+ *   get:
+ *     summary: Get custom events
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: dateRange
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Custom events retrieved successfully
+ *   post:
+ *     summary: Create custom event
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               parameters:
+ *                 type: object
+ *     responses:
+ *       201:
+ *         description: Custom event created successfully
+ */
+router.get('/analytics/events/custom', authenticateToken, AdsController.getCustomEvents);
+router.post('/analytics/events/custom', authenticateToken, AdsController.createCustomEvent);
+
+/**
+ * @swagger
+ * /api/ads/analytics/kpis/custom:
+ *   get:
+ *     summary: Get custom KPIs
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: dateRange
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Custom KPIs retrieved successfully
+ */
+router.get('/analytics/kpis/custom', authenticateToken, AdsController.getCustomKPIs);
+
+// ===========================================
+// USER SEGMENTS
+// ===========================================
+
+/**
+ * @swagger
+ * /api/ads/analytics/segments:
+ *   get:
+ *     summary: Get user segments
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Segments retrieved successfully
+ *   post:
+ *     summary: Create user segment
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               conditions:
+ *                 type: object
+ *     responses:
+ *       201:
+ *         description: Segment created successfully
+ */
+router.get('/analytics/segments', authenticateToken, AdsController.getSegments);
+router.post('/analytics/segments', authenticateToken, AdsController.createSegment);
+
+// ===========================================
+// TRAFFIC DETAILS
+// ===========================================
+
+/**
+ * @swagger
+ * /api/ads/analytics/traffic/sources:
+ *   get:
+ *     summary: Get traffic sources
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: dateRange
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Traffic sources retrieved successfully
+ */
+router.get('/analytics/traffic/sources', authenticateToken, AdsController.getTrafficSources);
+
+/**
+ * @swagger
+ * /api/ads/analytics/traffic/landing-pages:
+ *   get:
+ *     summary: Get landing pages analytics
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: dateRange
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Landing pages retrieved successfully
+ */
+router.get('/analytics/traffic/landing-pages', authenticateToken, AdsController.getLandingPages);
+
+/**
+ * @swagger
+ * /api/ads/analytics/traffic/exit-pages:
+ *   get:
+ *     summary: Get exit pages analytics
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: dateRange
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Exit pages retrieved successfully
+ */
+router.get('/analytics/traffic/exit-pages', authenticateToken, AdsController.getExitPages);
+
+// ===========================================
+// ENGAGEMENT
+// ===========================================
+
+/**
+ * @swagger
+ * /api/ads/analytics/engagement/frequency:
+ *   get:
+ *     summary: Get engagement frequency
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: dateRange
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Engagement frequency retrieved successfully
+ */
+router.get('/analytics/engagement/frequency', authenticateToken, AdsController.getEngagementFrequency);
+
+/**
+ * @swagger
+ * /api/ads/analytics/engagement/recency:
+ *   get:
+ *     summary: Get engagement recency
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: dateRange
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Engagement recency retrieved successfully
+ */
+router.get('/analytics/engagement/recency', authenticateToken, AdsController.getEngagementRecency);
+
+/**
+ * @swagger
+ * /api/ads/analytics/engagement/scroll-depth:
+ *   get:
+ *     summary: Get scroll depth analytics
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: dateRange
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Scroll depth retrieved successfully
+ */
+router.get('/analytics/engagement/scroll-depth', authenticateToken, AdsController.getScrollDepth);
 
 module.exports = router;

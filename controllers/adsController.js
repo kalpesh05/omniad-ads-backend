@@ -1,6 +1,9 @@
 const ConnectedAccount = require('../models/ConnectedAccount');
 const AdsManagerFactory = require('../services/adsManagerFactory');
 const AdPlatformAuthenticator = require('../utils/adsPlatformAuthenticator');
+const AnalyticsService = require('../services/analyticsService');
+const AIService = require('../services/aiService');
+const ReportsService = require('../services/reportsService');
 const { queryToDateRange, formatMonthlyDataForChart, getYearDateRange, sortMonthlyChartData, formatDeviceDistributionForChart, addPercentageToData } = require('../utils/common');
 const {
     successResponse,
@@ -1055,6 +1058,776 @@ class AdsController {
                 status: 'error',
                 error: error.message
             }, 'Platform health check completed with errors');
+        }
+    }
+
+    // ===========================================
+    // CONVERSION ANALYTICS
+    // ===========================================
+
+    static async getConversionFunnel(req, res) {
+        try {
+            const { propertyId, startDate, endDate, dateRange } = req.query;
+            const userId = req.user.id;
+
+            const analyticsService = new AnalyticsService();
+            let start, end;
+            if (startDate && endDate) {
+                start = startDate;
+                end = endDate;
+            } else {
+                try {
+                    const dateRangeResult = queryToDateRange(dateRange || 'last-30-days');
+                    start = dateRangeResult.startDate;
+                    end = dateRangeResult.endDate;
+                } catch (error) {
+                    return errorResponse(res, `Invalid date range: ${error.message}`, 400);
+                }
+            }
+
+            const result = await analyticsService.getConversionFunnel(userId, propertyId, start, end);
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            successResponse(res, {
+                propertyId,
+                period: { startDate: start, endDate: end },
+                ...result.data
+            }, 'Conversion funnel retrieved successfully');
+        } catch (error) {
+            console.error('Get Conversion Funnel Error:', error);
+            errorResponse(res, 'Failed to retrieve conversion funnel');
+        }
+    }
+
+    static async getConversionsBySource(req, res) {
+        try {
+            const { propertyId, startDate, endDate, dateRange } = req.query;
+            const userId = req.user.id;
+
+            const analyticsService = new AnalyticsService();
+            let start, end;
+            if (startDate && endDate) {
+                start = startDate;
+                end = endDate;
+            } else {
+                try {
+                    const dateRangeResult = queryToDateRange(dateRange || 'last-30-days');
+                    start = dateRangeResult.startDate;
+                    end = dateRangeResult.endDate;
+                } catch (error) {
+                    return errorResponse(res, `Invalid date range: ${error.message}`, 400);
+                }
+            }
+
+            const result = await analyticsService.getConversionsBySource(userId, propertyId, start, end);
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            successResponse(res, {
+                propertyId,
+                period: { startDate: start, endDate: end },
+                ...result.data
+            }, 'Conversions by source retrieved successfully');
+        } catch (error) {
+            console.error('Get Conversions By Source Error:', error);
+            errorResponse(res, 'Failed to retrieve conversions by source');
+        }
+    }
+
+    static async getConversionGoals(req, res) {
+        try {
+            const { propertyId, startDate, endDate, dateRange } = req.query;
+            const userId = req.user.id;
+
+            const analyticsService = new AnalyticsService();
+            let start, end;
+            if (startDate && endDate) {
+                start = startDate;
+                end = endDate;
+            } else {
+                try {
+                    const dateRangeResult = queryToDateRange(dateRange || 'last-30-days');
+                    start = dateRangeResult.startDate;
+                    end = dateRangeResult.endDate;
+                } catch (error) {
+                    return errorResponse(res, `Invalid date range: ${error.message}`, 400);
+                }
+            }
+
+            const result = await analyticsService.getConversionGoals(userId, propertyId, start, end);
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            successResponse(res, {
+                propertyId,
+                period: { startDate: start, endDate: end },
+                ...result.data
+            }, 'Conversion goals retrieved successfully');
+        } catch (error) {
+            console.error('Get Conversion Goals Error:', error);
+            errorResponse(res, 'Failed to retrieve conversion goals');
+        }
+    }
+
+    // ===========================================
+    // REVENUE ANALYTICS
+    // ===========================================
+
+    static async getRevenueByChannel(req, res) {
+        try {
+            const { propertyId, startDate, endDate, dateRange } = req.query;
+            const userId = req.user.id;
+
+            const analyticsService = new AnalyticsService();
+            let start, end;
+            if (startDate && endDate) {
+                start = startDate;
+                end = endDate;
+            } else {
+                try {
+                    const dateRangeResult = queryToDateRange(dateRange || 'last-30-days');
+                    start = dateRangeResult.startDate;
+                    end = dateRangeResult.endDate;
+                } catch (error) {
+                    return errorResponse(res, `Invalid date range: ${error.message}`, 400);
+                }
+            }
+
+            const result = await analyticsService.getRevenueByChannel(userId, propertyId, start, end);
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            successResponse(res, {
+                propertyId,
+                period: { startDate: start, endDate: end },
+                ...result.data
+            }, 'Revenue by channel retrieved successfully');
+        } catch (error) {
+            console.error('Get Revenue By Channel Error:', error);
+            errorResponse(res, 'Failed to retrieve revenue by channel');
+        }
+    }
+
+    static async getRevenueByCampaigns(req, res) {
+        try {
+            const { propertyId, startDate, endDate, dateRange } = req.query;
+            const userId = req.user.id;
+
+            const analyticsService = new AnalyticsService();
+            let start, end;
+            if (startDate && endDate) {
+                start = startDate;
+                end = endDate;
+            } else {
+                try {
+                    const dateRangeResult = queryToDateRange(dateRange || 'last-30-days');
+                    start = dateRangeResult.startDate;
+                    end = dateRangeResult.endDate;
+                } catch (error) {
+                    return errorResponse(res, `Invalid date range: ${error.message}`, 400);
+                }
+            }
+
+            const result = await analyticsService.getRevenueByCampaigns(userId, propertyId, start, end);
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            successResponse(res, {
+                propertyId,
+                period: { startDate: start, endDate: end },
+                ...result.data
+            }, 'Revenue by campaigns retrieved successfully');
+        } catch (error) {
+            console.error('Get Revenue By Campaigns Error:', error);
+            errorResponse(res, 'Failed to retrieve revenue by campaigns');
+        }
+    }
+
+    static async getLifetimeValue(req, res) {
+        try {
+            const { propertyId, startDate, endDate, dateRange } = req.query;
+            const userId = req.user.id;
+
+            const analyticsService = new AnalyticsService();
+            let start, end;
+            if (startDate && endDate) {
+                start = startDate;
+                end = endDate;
+            } else {
+                try {
+                    const dateRangeResult = queryToDateRange(dateRange || 'last-30-days');
+                    start = dateRangeResult.startDate;
+                    end = dateRangeResult.endDate;
+                } catch (error) {
+                    return errorResponse(res, `Invalid date range: ${error.message}`, 400);
+                }
+            }
+
+            const result = await analyticsService.getLifetimeValue(userId, propertyId, start, end);
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            successResponse(res, {
+                propertyId,
+                period: { startDate: start, endDate: end },
+                ...result.data
+            }, 'Lifetime value retrieved successfully');
+        } catch (error) {
+            console.error('Get Lifetime Value Error:', error);
+            errorResponse(res, 'Failed to retrieve lifetime value');
+        }
+    }
+
+    // ===========================================
+    // CUSTOM EVENTS
+    // ===========================================
+
+    static async getCustomEvents(req, res) {
+        try {
+            const { propertyId, startDate, endDate, dateRange } = req.query;
+            const userId = req.user.id;
+
+            const analyticsService = new AnalyticsService();
+            let start, end;
+            if (startDate && endDate) {
+                start = startDate;
+                end = endDate;
+            } else {
+                try {
+                    const dateRangeResult = queryToDateRange(dateRange || 'last-30-days');
+                    start = dateRangeResult.startDate;
+                    end = dateRangeResult.endDate;
+                } catch (error) {
+                    return errorResponse(res, `Invalid date range: ${error.message}`, 400);
+                }
+            }
+
+            const result = await analyticsService.getCustomEvents(userId, propertyId, start, end);
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            successResponse(res, {
+                propertyId,
+                period: { startDate: start, endDate: end },
+                ...result.data
+            }, 'Custom events retrieved successfully');
+        } catch (error) {
+            console.error('Get Custom Events Error:', error);
+            errorResponse(res, 'Failed to retrieve custom events');
+        }
+    }
+
+    static async createCustomEvent(req, res) {
+        try {
+            const { propertyId } = req.query;
+            const eventData = req.body;
+            const userId = req.user.id;
+
+            const analyticsService = new AnalyticsService();
+            const result = await analyticsService.createCustomEvent(userId, propertyId, eventData);
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            successResponse(res, {
+                propertyId,
+                ...result.data
+            }, 'Custom event created successfully', 201);
+        } catch (error) {
+            console.error('Create Custom Event Error:', error);
+            errorResponse(res, 'Failed to create custom event');
+        }
+    }
+
+    static async getCustomKPIs(req, res) {
+        try {
+            const { propertyId, startDate, endDate, dateRange } = req.query;
+            const userId = req.user.id;
+
+            const analyticsService = new AnalyticsService();
+            let start, end;
+            if (startDate && endDate) {
+                start = startDate;
+                end = endDate;
+            } else {
+                try {
+                    const dateRangeResult = queryToDateRange(dateRange || 'last-30-days');
+                    start = dateRangeResult.startDate;
+                    end = dateRangeResult.endDate;
+                } catch (error) {
+                    return errorResponse(res, `Invalid date range: ${error.message}`, 400);
+                }
+            }
+
+            const result = await analyticsService.getCustomKPIs(userId, propertyId, start, end);
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            successResponse(res, {
+                propertyId,
+                period: { startDate: start, endDate: end },
+                ...result.data
+            }, 'Custom KPIs retrieved successfully');
+        } catch (error) {
+            console.error('Get Custom KPIs Error:', error);
+            errorResponse(res, 'Failed to retrieve custom KPIs');
+        }
+    }
+
+    // ===========================================
+    // USER SEGMENTS
+    // ===========================================
+
+    static async getSegments(req, res) {
+        try {
+            const { propertyId } = req.query;
+            const userId = req.user.id;
+
+            const analyticsService = new AnalyticsService();
+            const result = await analyticsService.getSegments(userId, propertyId);
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            successResponse(res, {
+                propertyId,
+                ...result.data
+            }, 'Segments retrieved successfully');
+        } catch (error) {
+            console.error('Get Segments Error:', error);
+            errorResponse(res, 'Failed to retrieve segments');
+        }
+    }
+
+    static async createSegment(req, res) {
+        try {
+            const { propertyId } = req.query;
+            const segmentData = req.body;
+            const userId = req.user.id;
+
+            const analyticsService = new AnalyticsService();
+            const result = await analyticsService.createSegment(userId, propertyId, segmentData);
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            successResponse(res, {
+                propertyId,
+                ...result.data
+            }, 'Segment created successfully', 201);
+        } catch (error) {
+            console.error('Create Segment Error:', error);
+            errorResponse(res, 'Failed to create segment');
+        }
+    }
+
+    // ===========================================
+    // TRAFFIC DETAILS
+    // ===========================================
+
+    static async getTrafficSources(req, res) {
+        try {
+            const { propertyId, startDate, endDate, dateRange } = req.query;
+            const userId = req.user.id;
+
+            const analyticsService = new AnalyticsService();
+            let start, end;
+            if (startDate && endDate) {
+                start = startDate;
+                end = endDate;
+            } else {
+                try {
+                    const dateRangeResult = queryToDateRange(dateRange || 'last-30-days');
+                    start = dateRangeResult.startDate;
+                    end = dateRangeResult.endDate;
+                } catch (error) {
+                    return errorResponse(res, `Invalid date range: ${error.message}`, 400);
+                }
+            }
+
+            const result = await analyticsService.getTrafficSources(userId, propertyId, start, end);
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            successResponse(res, {
+                propertyId,
+                period: { startDate: start, endDate: end },
+                ...result.data
+            }, 'Traffic sources retrieved successfully');
+        } catch (error) {
+            console.error('Get Traffic Sources Error:', error);
+            errorResponse(res, 'Failed to retrieve traffic sources');
+        }
+    }
+
+    static async getLandingPages(req, res) {
+        try {
+            const { propertyId, startDate, endDate, dateRange } = req.query;
+            const userId = req.user.id;
+
+            const analyticsService = new AnalyticsService();
+            let start, end;
+            if (startDate && endDate) {
+                start = startDate;
+                end = endDate;
+            } else {
+                try {
+                    const dateRangeResult = queryToDateRange(dateRange || 'last-30-days');
+                    start = dateRangeResult.startDate;
+                    end = dateRangeResult.endDate;
+                } catch (error) {
+                    return errorResponse(res, `Invalid date range: ${error.message}`, 400);
+                }
+            }
+
+            const result = await analyticsService.getLandingPages(userId, propertyId, start, end);
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            successResponse(res, {
+                propertyId,
+                period: { startDate: start, endDate: end },
+                ...result.data
+            }, 'Landing pages retrieved successfully');
+        } catch (error) {
+            console.error('Get Landing Pages Error:', error);
+            errorResponse(res, 'Failed to retrieve landing pages');
+        }
+    }
+
+    static async getExitPages(req, res) {
+        try {
+            const { propertyId, startDate, endDate, dateRange } = req.query;
+            const userId = req.user.id;
+
+            const analyticsService = new AnalyticsService();
+            let start, end;
+            if (startDate && endDate) {
+                start = startDate;
+                end = endDate;
+            } else {
+                try {
+                    const dateRangeResult = queryToDateRange(dateRange || 'last-30-days');
+                    start = dateRangeResult.startDate;
+                    end = dateRangeResult.endDate;
+                } catch (error) {
+                    return errorResponse(res, `Invalid date range: ${error.message}`, 400);
+                }
+            }
+
+            const result = await analyticsService.getExitPages(userId, propertyId, start, end);
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            successResponse(res, {
+                propertyId,
+                period: { startDate: start, endDate: end },
+                ...result.data
+            }, 'Exit pages retrieved successfully');
+        } catch (error) {
+            console.error('Get Exit Pages Error:', error);
+            errorResponse(res, 'Failed to retrieve exit pages');
+        }
+    }
+
+    // ===========================================
+    // ENGAGEMENT
+    // ===========================================
+
+    static async getEngagementFrequency(req, res) {
+        try {
+            const { propertyId, startDate, endDate, dateRange } = req.query;
+            const userId = req.user.id;
+
+            const analyticsService = new AnalyticsService();
+            let start, end;
+            if (startDate && endDate) {
+                start = startDate;
+                end = endDate;
+            } else {
+                try {
+                    const dateRangeResult = queryToDateRange(dateRange || 'last-30-days');
+                    start = dateRangeResult.startDate;
+                    end = dateRangeResult.endDate;
+                } catch (error) {
+                    return errorResponse(res, `Invalid date range: ${error.message}`, 400);
+                }
+            }
+
+            const result = await analyticsService.getEngagementFrequency(userId, propertyId, start, end);
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            successResponse(res, {
+                propertyId,
+                period: { startDate: start, endDate: end },
+                ...result.data
+            }, 'Engagement frequency retrieved successfully');
+        } catch (error) {
+            console.error('Get Engagement Frequency Error:', error);
+            errorResponse(res, 'Failed to retrieve engagement frequency');
+        }
+    }
+
+    static async getEngagementRecency(req, res) {
+        try {
+            const { propertyId, startDate, endDate, dateRange } = req.query;
+            const userId = req.user.id;
+
+            const analyticsService = new AnalyticsService();
+            let start, end;
+            if (startDate && endDate) {
+                start = startDate;
+                end = endDate;
+            } else {
+                try {
+                    const dateRangeResult = queryToDateRange(dateRange || 'last-30-days');
+                    start = dateRangeResult.startDate;
+                    end = dateRangeResult.endDate;
+                } catch (error) {
+                    return errorResponse(res, `Invalid date range: ${error.message}`, 400);
+                }
+            }
+
+            const result = await analyticsService.getEngagementRecency(userId, propertyId, start, end);
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            successResponse(res, {
+                propertyId,
+                period: { startDate: start, endDate: end },
+                ...result.data
+            }, 'Engagement recency retrieved successfully');
+        } catch (error) {
+            console.error('Get Engagement Recency Error:', error);
+            errorResponse(res, 'Failed to retrieve engagement recency');
+        }
+    }
+
+    static async getScrollDepth(req, res) {
+        try {
+            const { propertyId, startDate, endDate, dateRange } = req.query;
+            const userId = req.user.id;
+
+            const analyticsService = new AnalyticsService();
+            let start, end;
+            if (startDate && endDate) {
+                start = startDate;
+                end = endDate;
+            } else {
+                try {
+                    const dateRangeResult = queryToDateRange(dateRange || 'last-30-days');
+                    start = dateRangeResult.startDate;
+                    end = dateRangeResult.endDate;
+                } catch (error) {
+                    return errorResponse(res, `Invalid date range: ${error.message}`, 400);
+                }
+            }
+
+            const result = await analyticsService.getScrollDepth(userId, propertyId, start, end);
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            successResponse(res, {
+                propertyId,
+                period: { startDate: start, endDate: end },
+                ...result.data
+            }, 'Scroll depth retrieved successfully');
+        } catch (error) {
+            console.error('Get Scroll Depth Error:', error);
+            errorResponse(res, 'Failed to retrieve scroll depth');
+        }
+    }
+
+    // ===========================================
+    // AI FEATURES
+    // ===========================================
+
+    static async aiChat(req, res) {
+        try {
+            const { message, context } = req.body;
+            const userId = req.user.id;
+
+            const aiService = new AIService();
+            const result = await aiService.chat(userId, message, context);
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            successResponse(res, result.data, 'AI chat response generated successfully');
+        } catch (error) {
+            console.error('AI Chat Error:', error);
+            errorResponse(res, 'Failed to generate AI chat response');
+        }
+    }
+
+    static async aiInsights(req, res) {
+        try {
+            const { propertyId, startDate, endDate, dateRange } = req.body;
+            const userId = req.user.id;
+
+            const aiService = new AIService();
+            let start, end;
+            if (startDate && endDate) {
+                start = startDate;
+                end = endDate;
+            } else {
+                try {
+                    const dateRangeResult = queryToDateRange(dateRange || 'last-30-days');
+                    start = dateRangeResult.startDate;
+                    end = dateRangeResult.endDate;
+                } catch (error) {
+                    return errorResponse(res, `Invalid date range: ${error.message}`, 400);
+                }
+            }
+
+            const result = await aiService.getInsights(userId, propertyId, start, end);
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            successResponse(res, {
+                propertyId,
+                period: { startDate: start, endDate: end },
+                ...result.data
+            }, 'AI insights retrieved successfully');
+        } catch (error) {
+            console.error('AI Insights Error:', error);
+            errorResponse(res, 'Failed to retrieve AI insights');
+        }
+    }
+
+    static async aiRecommendations(req, res) {
+        try {
+            const { propertyId, startDate, endDate, dateRange } = req.body;
+            const userId = req.user.id;
+
+            const aiService = new AIService();
+            let start, end;
+            if (startDate && endDate) {
+                start = startDate;
+                end = endDate;
+            } else {
+                try {
+                    const dateRangeResult = queryToDateRange(dateRange || 'last-30-days');
+                    start = dateRangeResult.startDate;
+                    end = dateRangeResult.endDate;
+                } catch (error) {
+                    return errorResponse(res, `Invalid date range: ${error.message}`, 400);
+                }
+            }
+
+            const result = await aiService.getRecommendations(userId, propertyId, start, end);
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            successResponse(res, {
+                propertyId,
+                period: { startDate: start, endDate: end },
+                ...result.data
+            }, 'AI recommendations retrieved successfully');
+        } catch (error) {
+            console.error('AI Recommendations Error:', error);
+            errorResponse(res, 'Failed to retrieve AI recommendations');
+        }
+    }
+
+    // ===========================================
+    // REPORTS
+    // ===========================================
+
+    static async generateReport(req, res) {
+        try {
+            const reportData = req.body;
+            const userId = req.user.id;
+
+            const reportsService = new ReportsService();
+            const result = await reportsService.generateReport(userId, reportData);
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            successResponse(res, result.data, 'Report generated successfully', 201);
+        } catch (error) {
+            console.error('Generate Report Error:', error);
+            errorResponse(res, 'Failed to generate report');
+        }
+    }
+
+    static async getReports(req, res) {
+        try {
+            const { status, type } = req.query;
+            const userId = req.user.id;
+
+            const reportsService = new ReportsService();
+            const result = await reportsService.getReports(userId, { status, type });
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            successResponse(res, result.data, 'Reports retrieved successfully');
+        } catch (error) {
+            console.error('Get Reports Error:', error);
+            errorResponse(res, 'Failed to retrieve reports');
+        }
+    }
+
+    static async downloadReport(req, res) {
+        try {
+            const { id } = req.params;
+            const userId = req.user.id;
+
+            const reportsService = new ReportsService();
+            const result = await reportsService.downloadReport(userId, id);
+
+            if (!result.success) {
+                return errorResponse(res, result.error);
+            }
+
+            res.setHeader('Content-Type', result.data.contentType);
+            res.setHeader('Content-Disposition', `attachment; filename="${result.data.fileName}"`);
+            res.send(result.data.content);
+        } catch (error) {
+            console.error('Download Report Error:', error);
+            errorResponse(res, 'Failed to download report');
         }
     }
 }

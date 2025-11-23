@@ -18,6 +18,8 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const adsAuthRoutes = require('./routes/adsAuth');
 const adsRoutes = require('./routes/ads');
+const aiRoutes = require('./routes/ai');
+const reportsRoutes = require('./routes/reports');
 
 // Import database
 const { testConnection, initializeDatabase } = require('./config/database');
@@ -62,6 +64,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/ads-auth', adsAuthRoutes);
 app.use('/api/ads', adsRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/reports', reportsRoutes);
 
 // Error handling middleware
 app.use(notFoundHandler);
