@@ -1,10 +1,47 @@
 /**
  * Converts query string into date range for GA4 API
  * Supports: 'last-7-days', 'last-30-days', 'last-90-days', 'last-year'
- * @param {string} query - e.g. 'last-7-days'
+ * Also supports custom date range format: 'YYYY-MM-DD_YYYY-MM-DD' (e.g. '2025-10-31_2025-12-30')
+ * @param {string} query - e.g. 'last-7-days' or '2025-10-31_2025-12-30'
  * @returns {{startDate: string, endDate: string}} date range in 'YYYY-MM-DD' format
  */
 function queryToDateRange(query) {
+  // Check if query is a custom date range (contains underscore separator)
+  if (query.includes('_')) {
+    const parts = query.split('_');
+    if (parts.length !== 2) {
+      throw new Error("Invalid date range format. Expected 'YYYY-MM-DD_YYYY-MM-DD'");
+    }
+    
+    const startDateStr = parts[0].trim();
+    const endDateStr = parts[1].trim();
+    
+    // Validate date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(startDateStr) || !dateRegex.test(endDateStr)) {
+      throw new Error("Invalid date format. Expected 'YYYY-MM-DD' format");
+    }
+    
+    // Validate that dates are valid
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+    
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      throw new Error("Invalid date values provided");
+    }
+    
+    // Validate that start date is before or equal to end date
+    if (startDate > endDate) {
+      throw new Error("Start date must be before or equal to end date");
+    }
+    
+    return {
+      startDate: startDateStr,
+      endDate: endDateStr
+    };
+  }
+
+  // Handle predefined query strings
   const today = new Date();
   const endDate = today.toISOString().slice(0, 10);
 
