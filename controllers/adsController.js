@@ -680,7 +680,7 @@ class AdsController {
     // Controller for monthly chart metrics
     static async getAnalyticsMonthlyChart(req, res) {
         try {
-            const { year, propertyId } = req.query; // frontend should send year (e.g. "2025")
+            const { year, propertyId, dateRange } = req.query; // frontend should send year (e.g. "2025")
             const userId = req.user.id;
 
             const authenticator = new AdPlatformAuthenticator();
@@ -689,8 +689,9 @@ class AdsController {
             if (!accessToken) {
                 return errorResponse(res, 'No valid analytics access token found. Please re-authenticate.');
             }
-
-            const { startDate, endDate } = getYearDateRange(year);
+            
+            const { startDate, endDate } = queryToDateRange(dateRange); // Default 30 days if not supplied
+            // const { startDate, endDate } = getYearDateRange(year);
 
             // Fetch month-wise metrics
             const monthlyMetrics = await authenticator.getGoogleAnalyticsMonthlyMetrics(
@@ -757,8 +758,8 @@ class AdsController {
     // Controller for genarte report
     static async getAnalyticsReport(req, res) {
         try {
-            const { propertyId, startDate, endDate, reportType,reportName, description } = req.query;
-            const userId = req.user.id; 
+            const { propertyId, startDate, endDate, reportType, reportName, description } = req.query;
+            const userId = req.user.id;
 
             // Auth & token
             const authenticator = new AdPlatformAuthenticator();
@@ -776,7 +777,7 @@ class AdsController {
                 reportType,
                 reportName,
                 description
-            );  
+            );
 
             // Success response
             successResponse(res, {
@@ -790,7 +791,7 @@ class AdsController {
             errorResponse(res, 'Failed to retrieve analytics report data');
         }
     }
-    
+
     // Controller for top browsers
     static async getAnalyticsTopBrowsers(req, res) {
         try {
