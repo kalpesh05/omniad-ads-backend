@@ -866,6 +866,55 @@ class AdsController {
         }
     }
 
+    // Controller for revenue trends (time-series)
+    static async getAnalyticsRevenueTrends(req, res) {
+        try {
+            const { propertyId, startDate, endDate, dateRange } = req.query;
+            const userId = req.user.id;
+
+            // Auth & token
+            const authenticator = new AdPlatformAuthenticator();
+            const accessToken = await authenticator.getValidAccessToken(userId, 'analytics');
+            if (!accessToken) {
+                return errorResponse(res, 'No valid analytics access token found. Please re-authenticate.');
+            }
+
+            // Compute date range dynamically
+            let start, end;
+            if (startDate && endDate) {
+                start = startDate;
+                end = endDate;
+            } else {
+                try {
+                    const dateRangeResult = queryToDateRange(dateRange || 'last-30-days');
+                    start = dateRangeResult.startDate;
+                    end = dateRangeResult.endDate;
+                } catch (error) {
+                    return errorResponse(res, `Invalid date range: ${error.message}`, 400);
+                }
+            }
+
+            // Fetch revenue trends data
+            const revenueTrends = await authenticator.getGoogleAnalyticsRevenueTrends(
+                accessToken,
+                propertyId,
+                start,
+                end
+            );
+
+            // Success response
+            successResponse(res, {
+                platform: 'analytics',
+                propertyId,
+                period: { startDate: start, endDate: end },
+                revenueTrends: revenueTrends
+            }, 'Revenue trends analytics data retrieved successfully');
+        } catch (error) {
+            console.error('Get Analytics Revenue Trends Error:', error);
+            errorResponse(res, 'Failed to retrieve analytics revenue trends data');
+        }
+    }
+
     // ===========================================
     // TARGETING HELPERS (Facebook specific)
     // ===========================================

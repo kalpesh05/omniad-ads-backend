@@ -1358,6 +1358,92 @@ router.get('/analytics/pages', authenticateToken, AdsController.getAnalyticsTopP
 
 /**
  * @swagger
+ * /api/ads/analytics/revenue-trends:
+ *   get:
+ *     summary: Get Google Analytics revenue trends (time-series)
+ *     tags: [Google Analytics Specific]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Google Analytics property ID
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Start date for revenue trends (YYYY-MM-DD)
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: End date for revenue trends (YYYY-MM-DD)
+ *       - in: query
+ *         name: dateRange
+ *         schema:
+ *           type: string
+ *         description: Date range preset (e.g., last-30-days, last-90-days)
+ *     responses:
+ *       200:
+ *         description: Revenue trends analytics data retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     platform:
+ *                       type: string
+ *                       example: "analytics"
+ *                     propertyId:
+ *                       type: string
+ *                       description: Google Analytics property ID
+ *                     period:
+ *                       type: object
+ *                       properties:
+ *                         startDate:
+ *                           type: string
+ *                           format: date
+ *                         endDate:
+ *                           type: string
+ *                           format: date
+ *                     revenueTrends:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           date:
+ *                             type: string
+ *                             format: date
+ *                             description: Date in YYYY-MM-DD format
+ *                           revenue:
+ *                             type: number
+ *                             description: Total revenue for the date
+ *                           transactions:
+ *                             type: integer
+ *                             description: Number of transactions
+ *                           sessions:
+ *                             type: integer
+ *                             description: Number of sessions
+ *                           users:
+ *                             type: integer
+ *                             description: Number of unique users
+ */
+router.get('/analytics/revenue-trends', authenticateToken, AdsController.getAnalyticsRevenueTrends);
+
+/**
+ * @swagger
  * /api/ads/analytics/device:
  *   get:
  *     summary: Get Google Analytics device chart

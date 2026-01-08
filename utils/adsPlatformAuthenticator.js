@@ -1664,14 +1664,82 @@ class AdPlatformAuthenticator {
   }
 
   /**
-   * 
-   * @param {*} accessToken 
-   * @param {*} propertyId 
-   * @param {*} startDate 
-   * @param {*} endDate 
-   * @param {*} dimensions 
-   * @param {*} metrics 
-   * @returns 
+   * Fetches revenue trends over time for time-series visualization
+   * @param {string} accessToken - Google OAuth token
+   * @param {string} propertyId - GA4 property ID
+   * @param {string} startDate - Start date 'YYYY-MM-DD'
+   * @param {string} endDate - End date 'YYYY-MM-DD'
+   * @returns {Array} - Array of revenue data by date
+   */
+  async getGoogleAnalyticsRevenueTrends(accessToken, propertyId, startDate, endDate) {
+    const url = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`;
+
+    const requestBody = {
+      dateRanges: [
+        {
+          startDate: startDate,
+          endDate: endDate
+        }
+      ],
+      dimensions: [
+        { name: "date" }
+      ],
+      metrics: [
+        { name: "totalRevenue" },
+        { name: "transactions" },
+        { name: "sessions" },
+        { name: "activeUsers" }
+      ],
+      orderBys: [
+        {
+          dimension: {
+            dimensionName: "date"
+          }
+        }
+      ]
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error fetching revenue trends:", errorText);
+        return [];
+      }
+
+      const data = await response.json();
+      const rows = data.rows || [];
+
+      return rows.map((row) => ({
+        date: row.dimensionValues[0]?.value,
+        revenue: parseFloat(row.metricValues[0]?.value || 0),
+        transactions: parseInt(row.metricValues[1]?.value || 0),
+        sessions: parseInt(row.metricValues[2]?.value || 0),
+        users: parseInt(row.metricValues[3]?.value || 0)
+      }));
+    } catch (error) {
+      console.error("Error fetching revenue trends:", error);
+      return [];
+    }
+  }
+
+  /**
+   *
+   * @param {*} accessToken
+   * @param {*} propertyId
+   * @param {*} startDate
+   * @param {*} endDate
+   * @param {*} dimensions
+   * @param {*} metrics
+   * @returns
    */
   async runGoogleAnalyticsReport(accessToken, propertyId, startDate, endDate, dimensions = [], metrics = []) {
     const url = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`;
