@@ -1257,7 +1257,7 @@ class AdsController {
 
     static async getLifetimeValue(req, res) {
         try {
-            const { propertyId, startDate, endDate, dateRange } = req.query;
+            const { propertyId, startDate, endDate, dateRange, includeSegmented = 'true' } = req.query;
             const userId = req.user.id;
 
             const analyticsService = new AnalyticsService();
@@ -1275,17 +1275,36 @@ class AdsController {
                 }
             }
 
-            const result = await analyticsService.getLifetimeValue(userId, propertyId, start, end);
+            // Get cohort-based LTV (original method)
+            const cohortResult = await analyticsService.getLifetimeValue(userId, propertyId, start, end);
 
-            if (!result.success) {
-                return errorResponse(res, result.error);
+            if (!cohortResult.success) {
+                return errorResponse(res, cohortResult.error);
             }
 
-            successResponse(res, {
+            let segmentedResult = null;
+            if (includeSegmented === 'true') {
+                // Get segmented LTV (new method) - only if requested
+                try {
+                    segmentedResult = await analyticsService.getLifetimeValueBySegments(userId, propertyId, start, end);
+                } catch (segmentedError) {
+                    console.warn('Segmented LTV failed, continuing with cohort LTV only:', segmentedError.message);
+                    // Continue without segmented data if it fails
+                }
+            }
+
+            const responseData = {
                 propertyId,
                 period: { startDate: start, endDate: end },
-                ...result.data
-            }, 'Lifetime value retrieved successfully');
+                cohortLtv: cohortResult.data
+            };
+
+            // Add segmented LTV if available
+            if (segmentedResult && segmentedResult.success) {
+                responseData.segmentedLtv = segmentedResult.data;
+            }
+
+            successResponse(res, responseData, 'Lifetime value data retrieved successfully');
         } catch (error) {
             console.error('Get Lifetime Value Error:', error);
             errorResponse(res, 'Failed to retrieve lifetime value');
