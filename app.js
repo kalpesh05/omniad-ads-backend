@@ -20,6 +20,15 @@ const adsAuthRoutes = require('./routes/adsAuth');
 const adsRoutes = require('./routes/ads');
 const aiRoutes = require('./routes/ai');
 const reportsRoutes = require('./routes/reports');
+const teamRoutes = require('./routes/teams');
+const auditRoutes = require('./routes/audit');
+const campaignRoutes = require('./routes/campaigns');
+const analyticsRoutes = require('./routes/analytics');
+const contentRoutes = require('./routes/content');
+const notificationRoutes = require('./routes/notifications');
+const inboxRoutes = require('./routes/inbox');
+const settingsRoutes = require('./routes/settings');
+const billingRoutes = require('./routes/billing');
 
 // Import database
 const { testConnection, initializeDatabase } = require('./config/database');
@@ -35,9 +44,9 @@ app.use(compression);
 // Security middleware
 app.use(securityHeaders);
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://omnilens.netlify.app'] 
-    : ['http://localhost:3000', 'http://localhost:8080','https://omnilens.netlify.app'],
+  origin: process.env.NODE_ENV === 'production'
+    ? ['https://omnilens.netlify.app']
+    : ['http://localhost:3000', 'http://localhost:8080', 'https://omnilens.netlify.app'],
   credentials: true
 }));
 
@@ -66,6 +75,21 @@ app.use('/api/ads-auth', adsAuthRoutes);
 app.use('/api/ads', adsRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/teams', teamRoutes);
+const path = require('path');
+
+// Serve static media files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Mount API routes
+app.use('/api/audit-logs', auditRoutes);
+app.use('/api/campaigns', campaignRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/content', contentRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/inbox', inboxRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/billing', billingRoutes);
 
 // Error handling middleware
 app.use(notFoundHandler);
@@ -76,13 +100,13 @@ const initializeApp = async () => {
   try {
     // Connect to Redis (optional)
     await connectRedis();
-    
+
     // Test database connection
     await testConnection();
-    
+
     // Initialize database tables
     await initializeDatabase();
-    
+
     logger.info('✅ Application initialized successfully');
   } catch (error) {
     logger.error('❌ Application initialization failed:', { error: error.message });

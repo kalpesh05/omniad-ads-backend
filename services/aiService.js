@@ -1,83 +1,128 @@
+const { OpenAI } = require('openai');
+const Anthropic = require('@anthropic-ai/sdk');
+const { GoogleGenAI } = require('@google/genai');
+
 class AIService {
   constructor() {
-    // AI service initialization
+    // Initialize Clients conditionally based on ENV keys
+    this.openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
+    this.anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }) : null;
+    this.gemini = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
   }
 
+  /**
+   * Internal unified completion handler
+   * @param {string} prompt The full instruction text
+   * @param {string} provider 'openai' | 'anthropic' | 'gemini'
+   */
+  async _generateCompletion(prompt, provider = 'openai') {
+    try {
+      switch (provider.toLowerCase()) {
+        case 'openai':
+        case 'gpt':
+          if (!this.openai) throw new Error('OpenAI API Key is missing.');
+          const gptResponse = await this.openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.7,
+          });
+          return gptResponse.choices[0].message.content;
+
+        case 'anthropic':
+        case 'claude':
+          if (!this.anthropic) throw new Error('Anthropic API Key is missing.');
+          const claudeResponse = await this.anthropic.messages.create({
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: 1024,
+            messages: [{ role: 'user', content: prompt }]
+          });
+          return claudeResponse.content[0].text;
+
+        case 'gemini':
+        case 'google':
+          if (!this.gemini) throw new Error('Gemini API Key is missing.');
+          const geminiResponse = await this.gemini.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+          });
+          return geminiResponse.text;
+
+        default:
+          throw new Error(`Unsupported AI Provider: ${provider}. Supported: openai, anthropic, gemini`);
+      }
+    } catch (error) {
+      console.error(`[AIService - ${provider}] Error:`, error.message);
+      throw new Error(`AI Generation failed via ${provider}: ${error.message}`);
+    }
+  }
+
+  /**
+   * Generate engaging Ad Copy targeting a specific audience
+   */
+  async generateAdCopy(topic, targetAudience, platform = 'Facebook', provider = 'openai') {
+    const prompt = `
+You are an expert digital marketing copywriter. Generate 3 unique, high-converting ad variations for ${platform}.
+Topic/Product: ${topic}
+Target Audience: ${targetAudience}
+
+Please format the output exactly as a JSON array of objects, containing { "headline": "...", "primaryText": "..." }. 
+Do not wrap it in markdown block quotes. Just the raw JSON array.
+        `;
+
+    const rawText = await this._generateCompletion(prompt, provider);
+
+    try {
+      // Attempt to slice out just the JSON array if the model got chatty
+      const startIdx = rawText.indexOf('[');
+      const endIdx = rawText.lastIndexOf(']') + 1;
+      return { success: true, data: JSON.parse(rawText.substring(startIdx, endIdx)) };
+    } catch (e) {
+      console.error('Failed to parse AI JSON:', rawText);
+      return { success: false, error: 'AI returned malformed JSON output' };
+    }
+  }
+
+  /**
+   * Provide actionable insights off raw tracking metrics
+   * (Overrides the previous mock implementation)
+   */
+  async getInsights(userId, propertyId, startDate, endDate, metricsSummary = null, provider = 'openai') {
+    if (!metricsSummary) {
+      metricsSummary = "Generic increase in CTR but lower conversion rate."; // Fallback for pure testing
+    }
+
+    const prompt = `
+You are a senior media buyer analyzing ad campaign performance. Review the following metrics summary and provide 2 short, actionable bullet points on what to optimize or scale next.
+
+Metrics:
+${JSON.stringify(metricsSummary, null, 2)}
+
+Format your response as a valid JSON array of objects exactly like this:
+[
+  { "type": "performance", "title": "...", "description": "...", "impact": "high", "recommendation": "..." }
+]
+        `;
+
+    try {
+      const rawText = await this._generateCompletion(prompt, provider);
+      const startIdx = rawText.indexOf('[');
+      const endIdx = rawText.lastIndexOf(']') + 1;
+      return { success: true, data: { insights: JSON.parse(rawText.substring(startIdx, endIdx)) } };
+    } catch (e) {
+      return { success: false, error: 'AI failed to analyze insights' };
+    }
+  }
+
+  // Legacy mapping to prevent older routes from crashing
   async chat(userId, message, context = {}) {
     try {
-      // Implementation for AI chat
-      // This would typically integrate with an AI service like OpenAI, Claude, etc.
-      return {
-        success: true,
-        data: {
-          response: `AI response to: ${message}`,
-          timestamp: new Date().toISOString(),
-          context
-        }
-      };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  }
-
-  async getInsights(userId, propertyId, startDate, endDate) {
-    try {
-      // Implementation for AI-generated insights
-      return {
-        success: true,
-        data: {
-          insights: [
-            {
-              type: 'performance',
-              title: 'Traffic Increase Detected',
-              description: 'Your traffic has increased by 25% compared to last period',
-              impact: 'high',
-              recommendation: 'Consider increasing ad spend to capitalize on this trend'
-            },
-            {
-              type: 'conversion',
-              title: 'Conversion Rate Optimization',
-              description: 'Mobile conversion rate is 30% lower than desktop',
-              impact: 'medium',
-              recommendation: 'Optimize mobile checkout experience'
-            }
-          ]
-        }
-      };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  }
-
-  async getRecommendations(userId, propertyId, startDate, endDate) {
-    try {
-      // Implementation for AI recommendations
-      return {
-        success: true,
-        data: {
-          recommendations: [
-            {
-              category: 'budget',
-              title: 'Increase Budget for Top Performers',
-              description: 'Campaigns A, B, and C are performing above average',
-              priority: 'high',
-              estimatedImpact: '+15% revenue'
-            },
-            {
-              category: 'targeting',
-              title: 'Expand Audience for Campaign D',
-              description: 'Campaign D has low reach but high conversion rate',
-              priority: 'medium',
-              estimatedImpact: '+8% conversions'
-            }
-          ]
-        }
-      };
+      const response = await this._generateCompletion(message, 'openai');
+      return { success: true, data: { response, timestamp: new Date().toISOString(), context } };
     } catch (error) {
       return { success: false, error: error.message };
     }
   }
 }
 
-module.exports = AIService;
-
+// Export singleton instance
+module.exports = new AIService();

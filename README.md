@@ -6,6 +6,7 @@ A production-ready Node.js Express backend with MySQL database, JWT authenticati
 
 - 🔐 **JWT Authentication** - Secure token-based authentication
 - 👥 **Role-Based Authorization** - Admin, Moderator, and User roles
+- 🔗 **Platform Integrations** - Automated OAuth & Token Refresh for Facebook, Instagram, Meta, Google Ads, Analytics & YouTube
 - 🗄️ **MySQL Database** - Robust relational database with connection pooling
 - 🔒 **Security Features** - Rate limiting, CORS, security headers, input validation
 - 📝 **Input Validation** - Comprehensive validation with detailed error messages
@@ -79,6 +80,22 @@ A production-ready Node.js Express backend with MySQL database, JWT authenticati
    ```
 
 The server will automatically create the necessary database tables on first run.
+
+## Integrated Authentication Platforms
+
+The application features a built-in `AdPlatformAuthenticator` utility to securely connect, manage, and automatically refresh OAuth tokens across major advertising ecosystems:
+
+### Meta Ecosystem
+- **Facebook Ads** (`ads_management`, `pages_manage_ads`)
+- **Instagram Ads** (`instagram_basic`, `instagram_manage_insights`)
+- **Meta Business Management** (`business_management`, `catalog_management`)
+
+### Google Ecosystem
+- **Google Ads** (`https://www.googleapis.com/auth/adwords`)
+- **Google Analytics** (`https://www.googleapis.com/auth/analytics`)
+- **YouTube** (`https://www.googleapis.com/auth/youtube`)
+
+Tokens are securely stored in the `ads_tokens` table and are configured to auto-refresh natively whenever `AdPlatformAuthenticator.getValidAccessToken()` is called.
 
 ## API Endpoints
 

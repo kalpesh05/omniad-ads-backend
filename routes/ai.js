@@ -1,15 +1,23 @@
 const express = require('express');
-const AdsController = require('../controllers/adsController');
+const router = express.Router();
+const aiController = require('../controllers/aiController');
 const { authenticateToken } = require('../middleware/auth');
 
-const router = express.Router();
+/**
+ * @swagger
+ * tags:
+ *   name: AI Services
+ *   description: Generative AI for Ad Copy and Insights
+ */
+
+router.use(authenticateToken);
 
 /**
  * @swagger
- * /api/ai/chat:
+ * /ai/generate-copy:
  *   post:
- *     summary: AI chat endpoint
- *     tags: [AI Features]
+ *     summary: Generate Ad Copy variations using AI
+ *     tags: [AI Services]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -18,84 +26,55 @@ const router = express.Router();
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - message
  *             properties:
- *               message:
+ *               topic:
  *                 type: string
- *               context:
+ *                 example: "eco-friendly running shoes"
+ *               targetAudience:
+ *                 type: string
+ *                 example: "marathon runners aged 25-40"
+ *               platform:
+ *                 type: string
+ *                 example: "Facebook"
+ *               provider:
+ *                 type: string
+ *                 enum: [openai, anthropic, gemini]
+ *                 example: "openai"
+ *     responses:
+ *       200:
+ *         description: AI Drafts Generated successfully
+ */
+router.post('/generate-copy', aiController.generateCopy);
+
+/**
+ * @swagger
+ * /ai/insights:
+ *   post:
+ *     summary: Analyze tracking metrics and return actionable insights
+ *     tags: [AI Services]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               metricsSummary:
  *                 type: object
+ *               provider:
+ *                 type: string
+ *                 enum: [openai, anthropic, gemini]
+ *                 example: "anthropic"
  *     responses:
  *       200:
- *         description: AI chat response generated successfully
+ *         description: Actionable insights analyzed
  */
-router.post('/chat', authenticateToken, AdsController.aiChat);
+router.post('/insights', aiController.generateInsights);
 
-/**
- * @swagger
- * /api/ai/insights:
- *   post:
- *     summary: Get AI-generated insights
- *     tags: [AI Features]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - propertyId
- *             properties:
- *               propertyId:
- *                 type: string
- *               startDate:
- *                 type: string
- *                 format: date
- *               endDate:
- *                 type: string
- *                 format: date
- *               dateRange:
- *                 type: string
- *     responses:
- *       200:
- *         description: AI insights retrieved successfully
- */
-router.post('/insights', authenticateToken, AdsController.aiInsights);
-
-/**
- * @swagger
- * /api/ai/recommendations:
- *   post:
- *     summary: Get AI recommendations
- *     tags: [AI Features]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - propertyId
- *             properties:
- *               propertyId:
- *                 type: string
- *               startDate:
- *                 type: string
- *                 format: date
- *               endDate:
- *                 type: string
- *                 format: date
- *               dateRange:
- *                 type: string
- *     responses:
- *       200:
- *         description: AI recommendations retrieved successfully
- */
-router.post('/recommendations', authenticateToken, AdsController.aiRecommendations);
+// Preserve legacy chat for broader system compatibility
+const AdsController = require('../controllers/adsController');
+router.post('/chat', AdsController.aiChat);
 
 module.exports = router;
-

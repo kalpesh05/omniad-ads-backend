@@ -11,12 +11,16 @@ async function ensureDatabaseExists() {
     password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD,
     database: process.env.DB_NAME || process.env.MYSQLDATABASE,
     // Do NOT specify database here
+    // Do NOT specify database here
   });
   const dbName = process.env.DB_NAME;
   return new Promise((resolve, reject) => {
     connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`, (err) => {
-      connection.end();
-      if (err) return reject(err);
+      if (err) {
+        connection.destroy();
+        return reject(err);
+      }
+      connection.destroy();
       resolve();
     });
   });
@@ -270,6 +274,162 @@ const initializeDatabase = async () => {
     `);
     // eslint-disable-next-line no-console
     console.log('�� Database tables created successfully');
+
+    // Create teams table (Phase 1)
+    await promisePool.execute(`
+      CREATE TABLE IF NOT EXISTS teams (
+        id VARCHAR(36) PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        slug VARCHAR(100) UNIQUE NOT NULL,
+        owner_id INT,
+        plan VARCHAR(20) DEFAULT 'free',
+        settings JSON,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL,
+        INDEX idx_owner_id (owner_id)
+      )
+    `);
+
+    // Create team_members table (Phase 1)
+    await promisePool.execute(`
+      CREATE TABLE IF NOT EXISTS team_members (
+        id VARCHAR(36) PRIMARY KEY,
+        team_id VARCHAR(36) NOT NULL,
+        user_id INT NOT NULL,
+        role ENUM('admin', 'manager', 'editor', 'viewer') DEFAULT 'viewer',
+        invited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        joined_at TIMESTAMP NULL,
+        FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_team_user (team_id, user_id),
+        INDEX idx_team_id (team_id),
+        INDEX idx_user_id (user_id)
+      )
+    `);
+
+    // Create audit_logs table (Phase 1)
+    await promisePool.execute(`
+      CREATE TABLE IF NOT EXISTS audit_logs (
+        id VARCHAR(36) PRIMARY KEY,
+        team_id VARCHAR(36) NOT NULL,
+        user_id INT,
+        action VARCHAR(100) NOT NULL,
+        resource VARCHAR(50) NOT NULL,
+        resource_id VARCHAR(100),
+        resource_name VARCHAR(200),
+        details JSON,
+        ip_address VARCHAR(45),
+        user_agent TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+        INDEX idx_audit_team (team_id, created_at DESC)
+      )
+    `);
+
+    // Create content_posts table (Phase 3)
+    await promisePool.execute(`
+      CREATE TABLE IF NOT EXISTS content_posts (
+        id VARCHAR(36) PRIMARY KEY,
+        team_id VARCHAR(36) NOT NULL,
+        author_id INT NOT NULL,
+        title VARCHAR(200) NOT NULL,
+        content TEXT,
+        platforms JSON,
+        status ENUM('draft', 'scheduled', 'published', 'failed') DEFAULT 'draft',
+        scheduled_for TIMESTAMP NULL,
+        published_at TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+        FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE,
+        INDEX idx_content_team_status (team_id, status),
+        INDEX idx_content_scheduled (scheduled_for)
+      )
+    `);
+
+    // Create content_media table (Phase 3)
+    await promisePool.execute(`
+      CREATE TABLE IF NOT EXISTS content_media (
+        id VARCHAR(36) PRIMARY KEY,
+        post_id VARCHAR(36) NOT NULL,
+        filename VARCHAR(255) NOT NULL,
+        original_name VARCHAR(255) NOT NULL,
+        mime_type VARCHAR(100) NOT NULL,
+        size INT NOT NULL,
+        url VARCHAR(500) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (post_id) REFERENCES content_posts(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Create notifications table (Phase 4)
+    await promisePool.execute(`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id VARCHAR(36) PRIMARY KEY,
+        user_id INT NOT NULL,
+        team_id VARCHAR(36),
+        type VARCHAR(50) NOT NULL,
+        title VARCHAR(150) NOT NULL,
+        message TEXT,
+        read_at TIMESTAMP NULL,
+        action_url VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+        INDEX idx_user_unread (user_id, read_at)
+      )
+    `);
+
+    // Create inbox_messages table (Phase 4)
+    await promisePool.execute(`
+      CREATE TABLE IF NOT EXISTS inbox_messages (
+        id VARCHAR(36) PRIMARY KEY,
+        team_id VARCHAR(36) NOT NULL,
+        platform VARCHAR(50) NOT NULL,
+        external_id VARCHAR(100),
+        sender_name VARCHAR(100),
+        sender_avatar VARCHAR(255),
+        message TEXT NOT NULL,
+        status ENUM('unread', 'read', 'replied', 'archived') DEFAULT 'unread',
+        received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+        INDEX idx_inbox_team (team_id, status)
+      )
+    `);
+
+    // Create subscriptions table (Phase 5)
+    await promisePool.execute(`
+      CREATE TABLE IF NOT EXISTS subscriptions (
+        id VARCHAR(36) PRIMARY KEY,
+        team_id VARCHAR(36) NOT NULL UNIQUE,
+        plan_id VARCHAR(50) NOT NULL DEFAULT 'free',
+        status ENUM('trialing', 'active', 'past_due', 'canceled', 'unpaid') DEFAULT 'trialing',
+        stripe_customer_id VARCHAR(100),
+        stripe_subscription_id VARCHAR(100),
+        billing_interval ENUM('monthly', 'yearly') NULL,
+        trial_ends_at TIMESTAMP NULL,
+        current_period_end TIMESTAMP NULL,
+        cancel_at_period_end BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Create team_settings table (Phase 5)
+    await promisePool.execute(`
+      CREATE TABLE IF NOT EXISTS team_settings (
+        team_id VARCHAR(36) PRIMARY KEY,
+        timezone VARCHAR(50) DEFAULT 'UTC',
+        notification_preferences JSON,
+        auto_publish BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
+      )
+    `);
 
     console.log('✅ Database tables initialized successfully');
   } catch (error) {
