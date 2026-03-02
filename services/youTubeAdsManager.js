@@ -21,7 +21,7 @@ class YouTubeAdsManager {
     async executeYouTubeRequest(userId, method, endpoint, data = null, params = {}) {
         try {
             const accessToken = await this.authService.getAccessToken(userId, 'google');
-            
+
             const config = {
                 method,
                 url: `${this.youtubeBaseUrl}${endpoint}`,
@@ -109,6 +109,30 @@ class YouTubeAdsManager {
         });
     }
 
+    // Publish Organic YouTube Short (Added for Automation Engine)
+    async publishYouTubeShort(userId, channelId, title, description, videoUrl) {
+        // Step 1: Initialize resumable upload session
+        // Note: For a fully robust implementation in production, videoUrl should be streamed.
+        // For this API stub, we will initiate the YouTube Data API video insert endpoint.
+        const metadata = {
+            snippet: {
+                title: title,
+                description: description ? description + ' #shorts' : '#shorts',
+                categoryId: '22', // People & Blogs default
+            },
+            status: {
+                privacyStatus: 'public',
+                selfDeclaredMadeForKids: false
+            }
+        };
+
+        // Note: A real video upload requires sending the file stream via POST to /upload/youtube/v3/videos
+        // Because OmniAds backend currently just stores media URLs, we mimic the upload structure.
+        return await this.executeYouTubeRequest(userId, 'POST', '/videos', metadata, {
+            part: 'snippet,status'
+        });
+    }
+
     // ===========================================
     // CAMPAIGN MANAGEMENT
     // ===========================================
@@ -156,7 +180,7 @@ class YouTubeAdsManager {
 
         const endpoint = `/customers/${customerId}/campaigns:mutate`;
         const data = { operations: [operation] };
-        
+
         return await this.executeAdsRequest(userId, 'POST', endpoint, data, customerId);
     }
 
@@ -172,7 +196,7 @@ class YouTubeAdsManager {
 
         const endpoint = `/customers/${customerId}/campaigns:mutate`;
         const data = { operations: [operation] };
-        
+
         return await this.executeAdsRequest(userId, 'POST', endpoint, data, customerId);
     }
 
@@ -221,7 +245,7 @@ class YouTubeAdsManager {
 
         const endpoint = `/customers/${customerId}/adGroups:mutate`;
         const data = { operations: [operation] };
-        
+
         return await this.executeAdsRequest(userId, 'POST', endpoint, data, customerId);
     }
 
@@ -277,7 +301,7 @@ class YouTubeAdsManager {
 
         const endpoint = `/customers/${customerId}/adGroupAds:mutate`;
         const data = { operations: [operation] };
-        
+
         return await this.executeAdsRequest(userId, 'POST', endpoint, data, customerId);
     }
 
@@ -300,7 +324,7 @@ class YouTubeAdsManager {
 
         const endpoint = `/customers/${customerId}/adGroupAds:mutate`;
         const data = { operations: [operation] };
-        
+
         return await this.executeAdsRequest(userId, 'POST', endpoint, data, customerId);
     }
 
@@ -319,7 +343,7 @@ class YouTubeAdsManager {
 
         const endpoint = `/customers/${customerId}/adGroupCriteria:mutate`;
         const data = { operations };
-        
+
         return await this.executeAdsRequest(userId, 'POST', endpoint, data, customerId);
     }
 
@@ -334,7 +358,7 @@ class YouTubeAdsManager {
 
         const endpoint = `/customers/${customerId}/adGroupCriteria:mutate`;
         const data = { operations };
-        
+
         return await this.executeAdsRequest(userId, 'POST', endpoint, data, customerId);
     }
 
@@ -346,7 +370,7 @@ class YouTubeAdsManager {
     async getInsights(userId, customerId, objectType = 'campaign', dateRange = null, fields = null) {
         const defaultFields = [
             'impressions', 'clicks', 'cost_micros', 'video_views',
-            'video_quartile_p25_rate', 'video_quartile_p50_rate', 
+            'video_quartile_p25_rate', 'video_quartile_p50_rate',
             'video_quartile_p75_rate', 'video_quartile_p100_rate'
         ];
 
@@ -426,7 +450,7 @@ class YouTubeAdsManager {
 
         const endpoint = `/customers/${customerId}/assets:mutate`;
         const data = { operations: [operation] };
-        
+
         return await this.executeAdsRequest(userId, 'POST', endpoint, data, customerId);
     }
 
@@ -446,7 +470,7 @@ class YouTubeAdsManager {
 
         const endpoint = `/customers/${customerId}/assets:mutate`;
         const data = { operations: [operation] };
-        
+
         return await this.executeAdsRequest(userId, 'POST', endpoint, data, customerId);
     }
 
@@ -462,7 +486,7 @@ class YouTubeAdsManager {
             pageSize,
             validateOnly: false
         };
-        
+
         return await this.executeAdsRequest(userId, 'POST', endpoint, data, customerId);
     }
 
@@ -482,7 +506,7 @@ class YouTubeAdsManager {
 
         const endpoint = `/customers/${customerId}/campaigns:mutate`;
         const data = { operations };
-        
+
         return await this.executeAdsRequest(userId, 'POST', endpoint, data, customerId);
     }
 
@@ -508,7 +532,7 @@ class YouTubeAdsManager {
 
         const endpoint = `/customers/${customerId}/adGroupAds:mutate`;
         const data = { operations };
-        
+
         return await this.executeAdsRequest(userId, 'POST', endpoint, data, customerId);
     }
 }

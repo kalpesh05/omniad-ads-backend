@@ -1,6 +1,7 @@
 const app = require('./app');
 const RefreshToken = require('./models/RefreshToken');
 const { logger } = require('./middleware/logging');
+const { initCronJobs } = require('./cron/publisher');
 
 const PORT = process.env.PORT || 3000;
 
@@ -39,6 +40,9 @@ const server = app.listen(PORT, () => {
   };
 
   logger.info('🚀 Server started successfully', startupInfo);
+
+  // Initialize background automation workers
+  initCronJobs();
 
   if (process.env.NODE_ENV !== 'production') {
     console.log(`\n🚀 Server running on port ${PORT}`);

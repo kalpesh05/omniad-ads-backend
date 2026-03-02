@@ -72,6 +72,7 @@ router.post('/generate-copy', aiController.generateCopy);
  *         description: Actionable insights analyzed
  */
 router.post('/insights', aiController.generateInsights);
+router.get('/insights', aiController.getInsightsOverview);
 
 // Preserve legacy chat for broader system compatibility
 const AdsController = require('../controllers/adsController');

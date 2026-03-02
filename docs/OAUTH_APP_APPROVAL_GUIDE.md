@@ -57,7 +57,29 @@ Additionally, for Google Ads, you must register for a **Developer Token** inside
 
 ---
 
+## 3. LinkedIn (Marketing & Lead Gen)
+**Portal:** [LinkedIn Developer Portal](https://www.linkedin.com/developers/)
+**App Type:** Custom (Marketing Developer Platform)
+
+LinkedIn requires you to create an app in their Developer Portal and request access to the **Marketing Developer Platform**. Their review process can take up to a week, and they require a demonstration of how their APIs will be utilized within your platform.
+
+### Required Permissions & Justifications to Submit:
+
+1. **`r_ads` & `rw_ads`**
+   * **Why we need it:** To read performance metrics from LinkedIn ad campaigns and create/edit Sponsored Content natively.
+   * **What to tell LinkedIn:** *"OmniAds is a unified dashboard for B2B marketers. We require these scopes to pull LinkedIn Campaign Manager statistics into our unified reporting interface and allow advertisers to modify campaign budgets or statuses without leaving our application."*
+
+2. **`r_organization_social` & `w_organization_social`**
+   * **Why we need it:** To schedule organic posts to the organization's company page and fetch follower engagement data.
+   * **What to tell LinkedIn:** *"Our platform features a cross-channel content scheduler. We require these permissions to publish organic posts on behalf of the user's authenticated LinkedIn Company Page and analyze the resulting engagement."*
+
+3. **`r_ads_leadgen_automation`** *(Optional, if adding lead forms)*
+   * **Why we need it:** To synchronize lead generation form submissions from LinkedIn ads into our internal CRM or Export feature.
+   * **What to tell LinkedIn:** *"OmniAds allows marketers to unify their leads. This scope will allow us to securely download lead form responses submitted to the user's active LinkedIn Lead Generation campaigns."*
+
+---
+
 ### Pro-Tips For Smooth Approval:
 - **Record a Screencast:** Both Google and Meta rely heavily on video proof. Use tools like Loom to record a 2-minute video showing the user clicking "Log in with Facebook", authorizing the permissions, and showing *exactly* where their analytics load into your application. If they can see the value of the integration visually, they will approve it swiftly.
-- **Privacy Policy is Mandatory:** Your Privacy Policy must explicitly state what data you are collecting from Meta/Google, how it will be used (only for rendering their dashboard), and how they can request deletion of that data. (e.g., A "Data Deletion Request" contact form).
+- **Privacy Policy is Mandatory:** Your Privacy Policy must explicitly state what data you are collecting from external APIs, how it will be used (only for rendering their dashboard), and how they can request deletion of that data. (e.g., A "Data Deletion Request" contact form).
 - **Google Security Assessment:** If you request "Restricted Scopes", Google might mandate a CASB security assessment which can cost $15,000+. Fortunately, standard Adwords, YouTube, and Analytics scopes are generally considered **Sensitive** (not Restricted), meaning you bypass the expensive assessment and only need standard manual verification.

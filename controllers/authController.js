@@ -12,13 +12,14 @@ const {
 } = require('../utils/response');
 
 class AuthController {
-  // User registration
   static async register(req, res) {
     try {
-      let { username, full_name, email, password, role } = req.body;
+      let { username, full_name, name, email, password, role } = req.body;
+
+      const userFullName = full_name || name || email.split('@')[0];
 
       if (!username) {
-        username = full_name.toLowerCase().replace(/\s+/g, "_");
+        username = userFullName.toLowerCase().replace(/\s+/g, "_");
       }
 
       // Check if user already exists
@@ -263,6 +264,6 @@ class AuthController {
       errorResponse(res, 'Failed to save property');
     }
   }
-} 
+}
 
 module.exports = AuthController;

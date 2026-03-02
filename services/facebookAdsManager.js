@@ -183,11 +183,11 @@ class FacebookAdsManager {
     async createAdCreative(userId, accountId, creativeData) {
         const data = {
             name: creativeData.name,
-            
+
             // Object story spec for different placements
             object_story_spec: {
                 page_id: creativeData.pageId,
-                
+
                 // For link ads
                 ...(creativeData.type === 'link' && {
                     link_data: {
@@ -199,7 +199,7 @@ class FacebookAdsManager {
                         call_to_action: creativeData.callToAction
                     }
                 }),
-                
+
                 // For video ads
                 ...(creativeData.type === 'video' && {
                     video_data: {
@@ -209,7 +209,7 @@ class FacebookAdsManager {
                         call_to_action: creativeData.callToAction
                     }
                 }),
-                
+
                 // For photo ads
                 ...(creativeData.type === 'photo' && {
                     photo_data: {
@@ -218,7 +218,7 @@ class FacebookAdsManager {
                         call_to_action: creativeData.callToAction
                     }
                 }),
-                
+
                 // For carousel ads
                 ...(creativeData.type === 'carousel' && {
                     link_data: {
@@ -229,12 +229,12 @@ class FacebookAdsManager {
                     }
                 })
             },
-            
+
             // Instagram-specific settings
             ...(creativeData.instagramActorId && {
                 instagram_actor_id: creativeData.instagramActorId
             }),
-            
+
             // Additional properties
             ...(creativeData.degrees && { degrees_of_freedom_spec: creativeData.degrees }),
             ...(creativeData.dynamicAdTemplate && { dynamic_ad_template: creativeData.dynamicAdTemplate })
@@ -358,6 +358,40 @@ class FacebookAdsManager {
         return await this.executeRequest(userId, 'POST', `/${instagramAccountId}/media`, data);
     }
 
+    // Publish Organic Facebook Page Post (Added for Automation Engine)
+    async publishPagePost(userId, pageId, message, linkUrl = null) {
+        const data = {
+            message,
+            ...(linkUrl && { link: linkUrl })
+        };
+
+        // Note: Uses me/feed if pageId is null, assuming user authorized pages_manage_posts
+        const endpoint = pageId ? `/${pageId}/feed` : '/me/feed';
+        return await this.executeRequest(userId, 'POST', endpoint, data);
+    }
+
+    // Publish Organic Instagram Reel (Added for Automation Engine)
+    async publishInstagramReel(userId, igAccountId, caption, videoUrl) {
+        // Step 1: Initialize the upload container
+        const containerData = {
+            media_type: 'REELS',
+            video_url: videoUrl,
+            caption: caption
+        };
+
+        const containerResult = await this.executeRequest(userId, 'POST', `/${igAccountId}/media`, containerData);
+        if (!containerResult.success) return containerResult;
+
+        const creationId = containerResult.data.id;
+
+        // Step 2: Publish the container
+        const publishData = {
+            creation_id: creationId
+        };
+
+        return await this.executeRequest(userId, 'POST', `/${igAccountId}/media_publish`, publishData);
+    }
+
     // ===========================================
     // REPORTING & ANALYTICS - ENHANCED
     // ===========================================
@@ -415,7 +449,7 @@ class FacebookAdsManager {
 
     // Bulk update campaign status
     async bulkUpdateCampaignStatus(userId, campaignIds, status) {
-        const promises = campaignIds.map(campaignId => 
+        const promises = campaignIds.map(campaignId =>
             this.updateCampaign(userId, campaignId, { status })
         );
 
@@ -424,7 +458,7 @@ class FacebookAdsManager {
 
     // Bulk create ads
     async bulkCreateAds(userId, adSetId, adsData) {
-        const promises = adsData.map(adData => 
+        const promises = adsData.map(adData =>
             this.createAd(userId, adSetId, adData)
         );
 

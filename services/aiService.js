@@ -1,13 +1,26 @@
 const { OpenAI } = require('openai');
 const Anthropic = require('@anthropic-ai/sdk');
-const { GoogleGenAI } = require('@google/genai');
 
 class AIService {
   constructor() {
     // Initialize Clients conditionally based on ENV keys
     this.openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
     this.anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }) : null;
-    this.gemini = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
+    this.gemini = null;
+    this.geminiApiKey = process.env.GEMINI_API_KEY || null;
+    this.geminiInitPromise = null;
+  }
+
+  async _getGeminiClient() {
+    if (!this.geminiApiKey) return null;
+    if (this.gemini) return this.gemini;
+    if (!this.geminiInitPromise) {
+      this.geminiInitPromise = import('@google/genai').then(({ GoogleGenAI }) => {
+        this.gemini = new GoogleGenAI({ apiKey: this.geminiApiKey });
+        return this.gemini;
+      });
+    }
+    return this.geminiInitPromise;
   }
 
   /**
@@ -40,6 +53,7 @@ class AIService {
 
         case 'gemini':
         case 'google':
+          this.gemini = await this._getGeminiClient();
           if (!this.gemini) throw new Error('Gemini API Key is missing.');
           const geminiResponse = await this.gemini.models.generateContent({
             model: 'gemini-2.5-flash',

@@ -29,6 +29,7 @@ const notificationRoutes = require('./routes/notifications');
 const inboxRoutes = require('./routes/inbox');
 const settingsRoutes = require('./routes/settings');
 const billingRoutes = require('./routes/billing');
+const dashboardRoutes = require('./routes/dashboard');
 
 // Import database
 const { testConnection, initializeDatabase } = require('./config/database');
@@ -46,7 +47,7 @@ app.use(securityHeaders);
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
     ? ['https://omnilens.netlify.app']
-    : ['http://localhost:3000', 'http://localhost:8080', 'https://omnilens.netlify.app'],
+    : ['http://localhost:3000', 'http://localhost:8080', 'http://localhost:8081', 'https://omnilens.netlify.app'],
   credentials: true
 }));
 
@@ -90,6 +91,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/inbox', inboxRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/billing', billingRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Error handling middleware
 app.use(notFoundHandler);

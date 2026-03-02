@@ -26,33 +26,18 @@ router.use(authenticateToken);
 // we map these top-level generic routes to either aggregate across accounts
 // or require accountId in the body/query.
 
-router.get('/', AdsController.getAllCampaignsGeneric ? AdsController.getAllCampaignsGeneric : async (req, res) => {
-    // Stub for generic cross-platform campaign fetch if not yet implemented
-    res.status(501).json({ success: false, message: 'Top-level campaign aggregation pending backend query refactor' });
-});
+router.get('/', AdsController.getAllCampaignsGeneric);
 
-router.post('/', validateCreateCampaign, AdsController.createCampaignGeneric ? AdsController.createCampaignGeneric : async (req, res) => {
-    res.status(501).json({ success: false, message: 'Generic campaign creation requires accountId parsing logic to be refactored from AdsController' });
-});
+router.post('/', validateCreateCampaign, AdsController.createCampaignGeneric);
 
-router.get('/:id', async (req, res) => {
-    res.status(501).json({ success: false, message: 'Campaign specific fetch pending' });
-});
+router.get('/:id', AdsController.getCampaignGeneric);
 
-router.put('/:id', validateUpdateCampaign, async (req, res) => {
-    res.status(501).json({ success: false, message: 'Campaign generic update pending' });
-});
+router.put('/:id', validateUpdateCampaign, AdsController.updateCampaignGeneric);
 
-router.delete('/:id', async (req, res) => {
-    res.status(501).json({ success: false, message: 'Campaign generic delete pending' });
-});
+router.delete('/:id', AdsController.deleteCampaignGeneric);
 
-router.patch('/:id/status', async (req, res) => {
-    res.status(501).json({ success: false, message: 'Campaign status patch pending' });
-});
+router.patch('/:id/status', AdsController.updateCampaignStatusGeneric);
 
-router.post('/:id/sync', async (req, res) => {
-    res.status(501).json({ success: false, message: 'Campaign generic sync pending' });
-});
+router.post('/:id/sync', AdsController.syncCampaignGeneric);
 
 module.exports = router;

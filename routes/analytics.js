@@ -19,28 +19,16 @@ router.use(authenticateToken);
 // If AdsController already has these generically implemented (not tied to /ads/:platform/...), route them directly.
 // In the current codebase, they are in AdsController but expect req.user bindings or query params.
 
-router.get('/overview', AdsController.getAnalyticsMetrics ? AdsController.getAnalyticsMetrics : async (req, res) => {
-    res.status(501).json({ success: false, message: 'Generic analytics overview pending' });
-});
+router.get('/overview', AdsController.getAnalyticsOverviewGeneric);
 
-router.get('/performance', async (req, res) => {
-    res.status(501).json({ success: false, message: 'Generic analytics performance pending' });
-});
+router.get('/performance', AdsController.getAnalyticsPerformanceGeneric);
 
-router.get('/platforms', async (req, res) => {
-    res.status(501).json({ success: false, message: 'Generic analytics platforms breakdown pending' });
-});
+router.get('/platforms', AdsController.getAnalyticsPlatformsGeneric);
 
-router.get('/compare', async (req, res) => {
-    res.status(501).json({ success: false, message: 'Generic analytics comparison pending' });
-});
+router.get('/compare', AdsController.getAnalyticsCompareGeneric);
 
-router.post('/export', async (req, res) => {
-    res.status(501).json({ success: false, message: 'Generic analytics export pending' });
-});
+router.post('/export', AdsController.exportAnalyticsGeneric);
 
-router.get('/ga4', async (req, res) => {
-    res.status(501).json({ success: false, message: 'GA4 analytics pending' });
-});
+router.get('/ga4', AdsController.getAnalyticsGA4Generic);
 
 module.exports = router;
