@@ -80,7 +80,17 @@ class AdsToken {
     }
     const [rows] = await pool.execute(query, params);
     return rows.length > 0 ? new AdsToken(rows[0]) : null;
-  } 
+  }
+
+  // Safely find expiring tokens across all users (for cron jobs)
+  static async findExpiringTokens(expiryThreshold) {
+    // Find tokens that have an expiry_date BEFORE the threshold, AND have a refresh_token
+    const [rows] = await pool.execute(
+      'SELECT user_id, platform FROM ads_tokens WHERE expiry_date < ? AND refresh_token IS NOT NULL',
+      [expiryThreshold]
+    );
+    return rows;
+  }
 
   // Delete all tokens for a user
   static async deleteByUserId(user_id) {

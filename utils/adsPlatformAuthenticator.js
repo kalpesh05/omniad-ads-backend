@@ -98,6 +98,115 @@ class AdPlatformAuthenticator {
         ],
         authUrl: 'https://www.facebook.com/v18.0/dialog/oauth',
         tokenUrl: 'https://graph.facebook.com/v18.0/oauth/access_token'
+      },
+      tiktok: {
+        clientId: process.env.TIKTOK_CLIENT_ID,
+        clientSecret: process.env.TIKTOK_CLIENT_SECRET,
+        redirectUri: process.env.TIKTOK_REDIRECT_URI,
+        scopes: [
+          'admanager.read',
+          'user.info.basic'
+        ],
+        authUrl: 'https://business-api.tiktok.com/portal/auth',
+        tokenUrl: 'https://business-api.tiktok.com/open_api/v1.3/oauth2/access_token/'
+      },
+      microsoftads: {
+        clientId: process.env.MICROSOFT_CLIENT_ID,
+        clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
+        redirectUri: process.env.MICROSOFT_REDIRECT_URI,
+        scopes: [
+          'offline_access',
+          'User.Read',
+          'https://ads.microsoft.com/msads.manage'
+        ],
+        authUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
+        tokenUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/token'
+      },
+      amazonads: {
+        clientId: process.env.AMAZON_CLIENT_ID,
+        clientSecret: process.env.AMAZON_CLIENT_SECRET,
+        redirectUri: process.env.AMAZON_REDIRECT_URI,
+        scopes: [
+          'cpc_advertising:campaign_management'
+        ],
+        authUrl: 'https://www.amazon.com/ap/oa',
+        tokenUrl: 'https://api.amazon.com/auth/o2/token'
+      },
+      whatsapp: {
+        clientId: process.env.FACEBOOK_APP_ID,
+        clientSecret: process.env.FACEBOOK_APP_SECRET,
+        redirectUri: process.env.FACEBOOK_REDIRECT_URI,
+        scopes: [
+          'whatsapp_business_management',
+          'whatsapp_business_messaging'
+        ],
+        authUrl: 'https://www.facebook.com/v18.0/dialog/oauth',
+        tokenUrl: 'https://graph.facebook.com/v18.0/oauth/access_token'
+      },
+      linkedin: {
+        clientId: process.env.LINKEDIN_CLIENT_ID,
+        clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
+        redirectUri: process.env.LINKEDIN_REDIRECT_URI,
+        scopes: [
+          'r_liteprofile',
+          'r_emailaddress',
+          'r_ads',
+          'w_member_social',
+          'rw_organization_admin'
+        ],
+        authUrl: 'https://www.linkedin.com/oauth/v2/authorization',
+        tokenUrl: 'https://www.linkedin.com/oauth/v2/accessToken'
+      },
+      twitter: {
+        clientId: process.env.TWITTER_CLIENT_ID,
+        clientSecret: process.env.TWITTER_CLIENT_SECRET,
+        redirectUri: process.env.TWITTER_REDIRECT_URI,
+        scopes: [
+          'tweet.read',
+          'tweet.write',
+          'users.read',
+          'offline.access'
+        ],
+        authUrl: 'https://twitter.com/i/oauth2/authorize',
+        tokenUrl: 'https://api.twitter.com/2/oauth2/token'
+      },
+      shopify: {
+        clientId: process.env.SHOPIFY_CLIENT_ID,
+        clientSecret: process.env.SHOPIFY_CLIENT_SECRET,
+        redirectUri: process.env.SHOPIFY_REDIRECT_URI,
+        scopes: [
+          'read_products',
+          'read_orders',
+          'read_customers',
+          'read_analytics'
+        ],
+        authUrl: 'https://admin.shopify.com/oauth/authorize',
+        tokenUrl: 'https://admin.shopify.com/oauth/access_token'
+      },
+      hubspot: {
+        clientId: process.env.HUBSPOT_CLIENT_ID,
+        clientSecret: process.env.HUBSPOT_CLIENT_SECRET,
+        redirectUri: process.env.HUBSPOT_REDIRECT_URI,
+        scopes: [
+          'oauth',
+          'crm.objects.contacts.read',
+          'crm.objects.companies.read'
+        ],
+        authUrl: 'https://app.hubspot.com/oauth/authorize',
+        tokenUrl: 'https://api.hubapi.com/oauth/v1/token'
+      },
+      slack: {
+        clientId: process.env.SLACK_CLIENT_ID,
+        clientSecret: process.env.SLACK_CLIENT_SECRET,
+        redirectUri: process.env.SLACK_REDIRECT_URI,
+        scopes: [
+          'channels:read',
+          'chat:write',
+          'chat:write.public',
+          'users:read'
+        ],
+        authUrl: 'https://slack.com/oauth/v2/authorize',
+        tokenUrl: 'https://slack.com/api/oauth.v2.access'
       }
     };
 
@@ -106,6 +215,15 @@ class AdPlatformAuthenticator {
       GOOGLE_ADS_ONLY: ['googleads'],
       FACEBOOK_ADS_ONLY: ['facebook'],
       INSTAGRAM_ADS_ONLY: ['instagram'],
+      TIKTOK_ADS_ONLY: ['tiktok'],
+      MICROSOFT_ADS_ONLY: ['microsoftads'],
+      AMAZON_ADS_ONLY: ['amazonads'],
+      WHATSAPP_ADS_ONLY: ['whatsapp'],
+      LINKEDIN_ADS_ONLY: ['linkedin'],
+      TWITTER_ADS_ONLY: ['twitter'],
+      SHOPIFY_INTEGRATION: ['shopify'],
+      HUBSPOT_INTEGRATION: ['hubspot'],
+      SLACK_INTEGRATION: ['slack'],
       YOUTUBE_ADS_ONLY: ['youtube'], // YouTube ads managed through Google
       SOCIAL_MEDIA_SUITE: ['facebook', 'instagram', 'google'],
       ALL_PLATFORMS: ['google', 'facebook', 'instagram'],
@@ -482,6 +600,24 @@ class AdPlatformAuthenticator {
         case 'meta':
         case 'instagram':
           return await this.getFacebookUserInfo(accessToken);
+        case 'tiktok':
+          return await this.getTikTokUserInfo(accessToken);
+        case 'microsoftads':
+          return await this.getMicrosoftUserInfo(accessToken);
+        case 'amazonads':
+          return await this.getAmazonUserInfo(accessToken);
+        case 'whatsapp':
+          return await this.getFacebookUserInfo(accessToken); // WhatsApp user identity is tied to Meta
+        case 'linkedin':
+          return await this.getLinkedInUserInfo(accessToken);
+        case 'twitter':
+          return await this.getTwitterUserInfo(accessToken);
+        case 'shopify':
+          return await this.getShopifyUserInfo(accessToken);
+        case 'hubspot':
+          return await this.getHubSpotUserInfo(accessToken);
+        case 'slack':
+          return await this.getSlackUserInfo(accessToken);
         default:
           throw new Error(`User info not implemented for ${platform}`);
       }
@@ -514,6 +650,86 @@ class AdPlatformAuthenticator {
     return await response.json();
   }
 
+  async getTikTokUserInfo(accessToken) {
+    const response = await fetch(
+      'https://business-api.tiktok.com/open_api/v1.3/user/info/', {
+      headers: { 'Access-Token': accessToken }
+    }
+    );
+    if (!response.ok) {
+      throw new Error(`TikTok user info failed: ${response.status}`);
+    }
+    return await response.json();
+  }
+
+  async getMicrosoftUserInfo(accessToken) {
+    const response = await fetch(
+      'https://graph.microsoft.com/v1.0/me', {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    }
+    );
+    if (!response.ok) throw new Error(`Microsoft user info failed: ${response.status}`);
+    return await response.json();
+  }
+
+  async getAmazonUserInfo(accessToken) {
+    const response = await fetch(
+      'https://api.amazon.com/user/profile', {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    }
+    );
+    if (!response.ok) throw new Error(`Amazon user info failed: ${response.status}`);
+    return await response.json();
+  }
+
+  async getLinkedInUserInfo(accessToken) {
+    const response = await fetch(
+      'https://api.linkedin.com/v2/me', {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    }
+    );
+    if (!response.ok) throw new Error(`LinkedIn user info failed: ${response.status}`);
+    return await response.json();
+  }
+
+  async getTwitterUserInfo(accessToken) {
+    const response = await fetch(
+      'https://api.twitter.com/2/users/me', {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    }
+    );
+    if (!response.ok) throw new Error(`Twitter user info failed: ${response.status}`);
+    return await response.json();
+  }
+
+  async getShopifyUserInfo(accessToken) {
+    const response = await fetch(
+      'https://admin.shopify.com/admin/api/2023-10/shop.json', {
+      headers: { 'X-Shopify-Access-Token': accessToken }
+    }
+    );
+    if (!response.ok) throw new Error(`Shopify user info failed: ${response.status}`);
+    return await response.json();
+  }
+
+  async getHubSpotUserInfo(accessToken) {
+    const response = await fetch(
+      'https://api.hubapi.com/oauth/v1/access-tokens/' + accessToken
+    );
+    if (!response.ok) throw new Error(`HubSpot user info failed: ${response.status}`);
+    return await response.json();
+  }
+
+  async getSlackUserInfo(accessToken) {
+    const response = await fetch(
+      'https://slack.com/api/users.identity', {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    }
+    );
+    if (!response.ok) throw new Error(`Slack user info failed: ${response.status}`);
+    return await response.json();
+  }
+
   // Get available ad accounts and permissions
   async getPermissions(platform, accessToken) {
     try {
@@ -527,12 +743,278 @@ class AdPlatformAuthenticator {
         case 'meta':
         case 'instagram':
           return await this.getFacebookAdAccounts(accessToken);
+        case 'tiktok':
+          return await this.getTikTokAdAccounts(accessToken);
+        case 'microsoftads':
+          return await this.getMicrosoftAdAccounts(accessToken);
+        case 'amazonads':
+          return await this.getAmazonAdAccounts(accessToken);
+        case 'whatsapp':
+          return await this.getWhatsAppAccounts(accessToken);
+        case 'linkedin':
+          return await this.getLinkedInAdAccounts(accessToken);
+        case 'twitter':
+          return await this.getTwitterAdAccounts(accessToken);
+        case 'shopify':
+          return await this.getShopifyAccounts(accessToken);
+        case 'hubspot':
+          return await this.getHubSpotAccounts(accessToken);
+        case 'slack':
+          return await this.getSlackAccounts(accessToken);
         default:
           return {};
       }
     } catch (error) {
       console.error(`Failed to get permissions for ${platform}:`, error);
       return { error: error.message };
+    }
+  }
+
+  async getTikTokAdAccounts(accessToken) {
+    try {
+      const response = await fetch(
+        'https://business-api.tiktok.com/open_api/v1.3/oauth2/advertiser/get/', {
+        headers: {
+          'Access-Token': accessToken,
+          'App-Id': process.env.TIKTOK_CLIENT_ID
+        }
+      }
+      );
+
+      if (!response.ok) return { adAccounts: [] };
+
+      const data = await response.json();
+      const accounts = data.data?.list || [];
+
+      return {
+        adAccounts: accounts.map(acc => ({
+          account_id: acc.advertiser_id,
+          account_name: acc.advertiser_name,
+          status: acc.status === 1 ? 'ACTIVE' : 'INACTIVE',
+          currency: acc.currency || 'USD'
+        }))
+      };
+    } catch (e) {
+      console.error('Failed to parse TikTok accounts:', e);
+      return { adAccounts: [] };
+    }
+  }
+
+  async getMicrosoftAdAccounts(accessToken) {
+    try {
+      // Mockup of a SOAP/REST call to Bing Ads Customer Management API
+      const response = await fetch(
+        'https://clientcenter.api.bingads.microsoft.com/Api/CustomerManagement/v13/CustomerManagementService.svc/GetAccountsInfo', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'AuthenticationToken': accessToken,
+          'DeveloperToken': process.env.MICROSOFT_DEVELOPER_TOKEN || 'MOCK_TOKEN'
+        },
+        body: JSON.stringify({ /* Mock Payload */ })
+      }
+      );
+
+      if (!response.ok) return { adAccounts: [] };
+
+      const data = await response.json();
+      const accounts = data.AccountsInfo || [];
+
+      return {
+        adAccounts: accounts.map(acc => ({
+          account_id: acc.Id,
+          account_name: acc.Name,
+          status: acc.AccountLifeCycleStatus,
+          currency: acc.CurrencyCode || 'USD'
+        }))
+      };
+    } catch (e) {
+      console.error('Failed to parse Microsoft Ads accounts:', e);
+      return { adAccounts: [] };
+    }
+  }
+
+  async getAmazonAdAccounts(accessToken) {
+    try {
+      const response = await fetch(
+        'https://advertising-api.amazon.com/v2/profiles', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Amazon-Advertising-API-ClientId': process.env.AMAZON_CLIENT_ID
+        }
+      }
+      );
+
+      if (!response.ok) return { adAccounts: [] };
+
+      const accounts = await response.json();
+
+      return {
+        adAccounts: accounts.map(acc => ({
+          account_id: acc.profileId,
+          account_name: acc.accountInfo?.name || `Amazon Store ${acc.countryCode}`,
+          status: acc.accountInfo?.validPaymentMethod ? 'ACTIVE' : 'INACTIVE',
+          currency: acc.currencyCode || 'USD'
+        }))
+      };
+    } catch (e) {
+      console.error('Failed to parse Amazon Ads accounts:', e);
+      return { adAccounts: [] };
+    }
+  }
+
+  async getWhatsAppAccounts(accessToken) {
+    try {
+      const response = await fetch(
+        `https://graph.facebook.com/v18.0/me/whatsapp_business_accounts?access_token=${accessToken}`
+      );
+
+      if (!response.ok) return { adAccounts: [] };
+
+      const data = await response.json();
+      const accounts = data.data || [];
+
+      return {
+        adAccounts: accounts.map(acc => ({
+          account_id: acc.id,
+          account_name: acc.name || 'WhatsApp Business',
+          status: 'ACTIVE',
+          currency: acc.currency || 'USD'
+        }))
+      };
+    } catch (e) {
+      console.error('Failed to parse WhatsApp accounts:', e);
+      return { adAccounts: [] };
+    }
+  }
+
+  async getLinkedInAdAccounts(accessToken) {
+    try {
+      const response = await fetch(
+        'https://api.linkedin.com/v2/adAccounts?q=search&search=(status:(values:List(ACTIVE,DRAFT,PAUSED)))', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'X-Restli-Protocol-Version': '2.0.0'
+        }
+      }
+      );
+
+      if (!response.ok) return { adAccounts: [] };
+
+      const data = await response.json();
+      const accounts = data.elements || [];
+
+      return {
+        adAccounts: accounts.map(acc => ({
+          account_id: acc.id,
+          account_name: acc.name,
+          status: acc.status,
+          currency: acc.currency || 'USD'
+        }))
+      };
+    } catch (e) {
+      console.error('Failed to parse LinkedIn accounts:', e);
+      return { adAccounts: [] };
+    }
+  }
+
+  async getTwitterAdAccounts(accessToken) {
+    try {
+      const response = await fetch(
+        'https://ads-api.twitter.com/12/accounts', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      }
+      );
+
+      if (!response.ok) return { adAccounts: [] };
+
+      const data = await response.json();
+      const accounts = data.data || [];
+
+      return {
+        adAccounts: accounts.map(acc => ({
+          account_id: acc.id,
+          account_name: acc.name,
+          status: acc.approval_status === 'ACCEPTED' ? 'ACTIVE' : 'INACTIVE',
+          currency: acc.currency || 'USD'
+        }))
+      };
+    } catch (e) {
+      console.error('Failed to parse Twitter accounts:', e);
+      return { adAccounts: [] };
+    }
+  }
+
+  async getShopifyAccounts(accessToken) {
+    try {
+      const response = await fetch(
+        'https://admin.shopify.com/admin/api/2023-10/shop.json', {
+        headers: {
+          'X-Shopify-Access-Token': accessToken
+        }
+      }
+      );
+
+      if (!response.ok) return { adAccounts: [] };
+
+      const data = await response.json();
+      const shop = data.shop;
+
+      return {
+        adAccounts: [{
+          account_id: shop.id,
+          account_name: shop.name || shop.domain,
+          status: shop.plan_name ? 'ACTIVE' : 'INACTIVE',
+          currency: shop.currency || 'USD'
+        }]
+      };
+    } catch (e) {
+      console.error('Failed to parse Shopify accounts:', e);
+      return { adAccounts: [] };
+    }
+  }
+
+  async getHubSpotAccounts(accessToken) {
+    try {
+      const response = await fetch('https://api.hubapi.com/account-info/v3/details', {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      });
+      if (!response.ok) return { adAccounts: [] };
+      const data = await response.json();
+      return {
+        adAccounts: [{
+          account_id: data.portalId,
+          account_name: `HubSpot Portal ${data.portalId}`,
+          status: 'ACTIVE',
+          currency: 'USD'
+        }]
+      };
+    } catch (e) {
+      return { adAccounts: [] };
+    }
+  }
+
+  async getSlackAccounts(accessToken) {
+    try {
+      const response = await fetch('https://slack.com/api/team.info', {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      });
+      if (!response.ok) return { adAccounts: [] };
+      const data = await response.json();
+      if (!data.ok) return { adAccounts: [] };
+      return {
+        adAccounts: [{
+          account_id: data.team.id,
+          account_name: data.team.name,
+          status: 'ACTIVE',
+          currency: 'USD'
+        }]
+      };
+    } catch (e) {
+      return { adAccounts: [] };
     }
   }
 
@@ -1126,58 +1608,34 @@ class AdPlatformAuthenticator {
 
   // Get stored tokens
   async getStoredTokens(userId, platform) {
-    // Implement token retrieval
     console.log(`Retrieving tokens for user ${userId} on platform ${platform}`);
-
-    // TODO: Implement actual retrieval logic
 
     const tokenRecord = await AdsToken.findByUserAndPlatform(userId, platform);
     if (!tokenRecord) return {};
+
     return {
       access_token: tokenRecord.access_token,
       refresh_token: tokenRecord.refresh_token ? tokenRecord.refresh_token : null,
-      expiry_date: tokenRecord.expiry_date,
+      expires_date: tokenRecord.expiry_date, // Ensuring naming matches AuthStatus expectations
       last_refreshed: tokenRecord.last_refreshed
     };
-
-
-    return {}; // Return empty object if no tokens found
   }
 
   // Mark user for re-authentication
   async markForReauth(userId, platform) {
     console.log(`Marking user ${userId} for re-authentication on ${platform}`);
-
-    // TODO: Implement marking mechanism
-    /*
-    await db.update('user_tokens', 
-      { user_id: userId, platform: platform },
-      { needs_reauth: true, marked_at: new Date() }
-    );
-    
-    // Optional: Send notification to user
-    await notificationService.send(userId, {
-      type: 'reauth_required',
-      platform: platform,
-      message: `Please re-authenticate your ${platform} account`
-    });
-    */
+    // Easiest enforcement in this schema is completely dropping the invalid token payload 
+    // so they are forced through the OAuth flow again.
+    await AdsToken.deleteByUserAndPlatform(userId, platform);
   }
 
   // Get all users that need token refresh
   async getUsersNeedingRefresh() {
-    // TODO: Implement query to find users with expiring tokens
-    /*
+    // Calculate the threshold time. For example, if token expires in <= 10 mins.
     const expiryThreshold = new Date(Date.now() + (this.refreshConfig.bufferMinutes * 60 * 1000));
-    
-    return await db.find('user_tokens', {
-      expires_at: { $lt: expiryThreshold },
-      refresh_token: { $ne: null },
-      needs_reauth: { $ne: true }
-    });
-    */
 
-    return []; // Return empty array for now
+    // Defer to the DB model to scan for tokens past threshold
+    return await AdsToken.findExpiringTokens(expiryThreshold);
   }
 
   // Update user's auto-refresh preference

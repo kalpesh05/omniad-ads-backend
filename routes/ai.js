@@ -74,6 +74,34 @@ router.post('/generate-copy', aiController.generateCopy);
 router.post('/insights', aiController.generateInsights);
 router.get('/insights', aiController.getInsightsOverview);
 
+/**
+ * @swagger
+ * /ai/optimize-budget:
+ *   post:
+ *     summary: Get AI budget reallocation recommendations
+ *     tags: [AI Services]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Budget optimized
+ */
+router.post('/optimize-budget', aiController.optimizeBudget);
+
+/**
+ * @swagger
+ * /ai/anomalies:
+ *   get:
+ *     summary: Detect unusual performance changes
+ *     tags: [AI Services]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Anomalies detected
+ */
+router.get('/anomalies', aiController.getAnomalies);
+
 // Preserve legacy chat for broader system compatibility
 const AdsController = require('../controllers/adsController');
 router.post('/chat', AdsController.aiChat);

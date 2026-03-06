@@ -1,7 +1,7 @@
 // routes/adsAuthRoutes.js
 const express = require('express');
 const router = express.Router();
-const AdsAuthController = require('../controllers/adsAuthController');
+const AdsAuthController = require('../controllers/AdsAuthController');
 // const requireAuth = require('../middleware/requireAuth');
 const { authenticateToken } = require('../middleware/auth');
 
