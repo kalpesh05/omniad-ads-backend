@@ -3,17 +3,17 @@ require('dotenv').config();
 
 // Ensure database exists before creating pool
 async function ensureDatabaseExists() {
-  console.log("::----------------------- changes", process.env)
+  const dbName = process.env.DB_NAME || process.env.MYSQLDATABASE;
+  if (!dbName) {
+    throw new Error('DB_NAME or MYSQLDATABASE must be set in environment');
+  }
+  // Connect WITHOUT database - we can't connect to a DB that doesn't exist yet
   const connection = mysql.createConnection({
     host: process.env.DB_HOST || process.env.MYSQLHOST,
     port: process.env.DB_PORT || process.env.MYSQLPORT,
     user: process.env.DB_USER || process.env.MYSQLUSER,
     password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD,
-    database: process.env.DB_NAME || process.env.MYSQLDATABASE,
-    // Do NOT specify database here
-    // Do NOT specify database here
   });
-  const dbName = process.env.DB_NAME;
   return new Promise((resolve, reject) => {
     connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`, (err) => {
       if (err) {
@@ -26,12 +26,12 @@ async function ensureDatabaseExists() {
   });
 }
 
-// Call ensureDatabaseExists before pool creation
-(async () => {
+// Must complete before pool is used - creates DB if it doesn't exist
+const dbReady = (async () => {
   try {
     await ensureDatabaseExists();
     // eslint-disable-next-line no-console
-    console.log(`✅ Database "${process.env.DB_NAME}" exists or was created`);
+    console.log(`✅ Database "${process.env.DB_NAME || process.env.MYSQLDATABASE}" exists or was created`);
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('❌ Failed to ensure database exists:', err.message);
@@ -440,6 +440,7 @@ const initializeDatabase = async () => {
 
 module.exports = {
   pool: promisePool,
+  dbReady,
   testConnection,
   initializeDatabase
 };

@@ -32,7 +32,7 @@ const billingRoutes = require('./routes/billing');
 const dashboardRoutes = require('./routes/dashboard');
 
 // Import database
-const { testConnection, initializeDatabase } = require('./config/database');
+const { dbReady, testConnection, initializeDatabase } = require('./config/database');
 
 const app = express();
 
@@ -100,6 +100,9 @@ app.use(errorHandler);
 // Initialize database and start server
 const initializeApp = async () => {
   try {
+    // Ensure database exists before any DB operations
+    await dbReady;
+
     // Connect to Redis (optional)
     await connectRedis();
 
