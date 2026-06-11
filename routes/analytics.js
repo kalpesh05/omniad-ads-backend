@@ -1,7 +1,8 @@
 // Refactored analytics.js to match top-level /api/analytics
 const express = require('express');
 const router = express.Router();
-const AdsController = require('../controllers/adsController');
+const AnalyticsController = require('../controllers/ads/analyticsController');
+const ReportController = require('../controllers/ads/reportController');
 const { authenticateToken } = require('../middleware/auth');
 
 router.use(authenticateToken);
@@ -19,16 +20,16 @@ router.use(authenticateToken);
 // If AdsController already has these generically implemented (not tied to /ads/:platform/...), route them directly.
 // In the current codebase, they are in AdsController but expect req.user bindings or query params.
 
-router.get('/overview', AdsController.getAnalyticsOverviewGeneric);
+router.get('/overview', AnalyticsController.getAnalyticsOverviewGeneric);
 
-router.get('/performance', AdsController.getAnalyticsPerformanceGeneric);
+router.get('/performance', AnalyticsController.getAnalyticsPerformanceGeneric);
 
-router.get('/platforms', AdsController.getAnalyticsPlatformsGeneric);
+router.get('/platforms', AnalyticsController.getAnalyticsPlatformsGeneric);
 
-router.get('/compare', AdsController.getAnalyticsCompareGeneric);
+router.get('/compare', AnalyticsController.getAnalyticsCompareGeneric);
 
-router.post('/export', AdsController.exportAnalyticsGeneric);
+router.post('/export', ReportController.exportAnalyticsGeneric);
 
-router.get('/ga4', AdsController.getAnalyticsGA4Generic);
+router.get('/ga4', AnalyticsController.getAnalyticsGA4Generic);
 
 module.exports = router;

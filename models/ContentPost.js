@@ -1,13 +1,28 @@
-const { pool } = require('../config/database');
+const prisma = require('../config/prisma');
 const { v4: uuidv4 } = require('uuid');
 
 class ContentPost {
-    /**
-     * Run raw queries safely
-     */
-    static async query(sql, params) {
-        const [rows, fields] = await pool.execute(sql, params);
-        return rows;
+    // Helper to parse platforms JSON string if needed
+    static formatPost(post) {
+        if (!post) return null;
+        if (post.platforms && typeof post.platforms === 'string') {
+            try {
+                post.platforms = JSON.parse(post.platforms);
+            } catch (e) {
+                post.platforms = [];
+            }
+        } else if (!post.platforms) {
+            post.platforms = [];
+        }
+        
+        // Map author details if included
+        if (post.users) {
+            post.author_name = post.users.username;
+            post.author_email = post.users.email;
+            delete post.users;
+        }
+        
+        return post;
     }
 
     /**
@@ -24,43 +39,46 @@ class ContentPost {
 
         const offset = (page - 1) * limit;
 
-        let queryArgs = [teamId];
-        let whereClause = 'WHERE cp.team_id = ?';
+        const where = {
+            team_id: teamId
+        };
 
         if (status) {
-            whereClause += ' AND cp.status = ?';
-            queryArgs.push(status);
+            where.status = status;
         }
 
-        if (startDate) {
-            whereClause += ' AND cp.scheduled_for >= ?';
-            queryArgs.push(startDate);
+        if (startDate || endDate) {
+            where.scheduled_for = {};
+            if (startDate) {
+                where.scheduled_for.gte = new Date(startDate);
+            }
+            if (endDate) {
+                where.scheduled_for.lte = new Date(endDate);
+            }
         }
 
-        if (endDate) {
-            whereClause += ' AND cp.scheduled_for <= ?';
-            queryArgs.push(endDate);
-        }
-
-        const countSql = `SELECT COUNT(*) as total FROM content_posts cp ${whereClause}`;
-        const [countRows] = await pool.execute(countSql, queryArgs);
-        const total = countRows[0].total;
-
-        queryArgs.push(parseInt(limit), parseInt(offset));
-
-        const sql = `
-      SELECT cp.*, u.name as author_name, u.email as author_email 
-      FROM content_posts cp
-      LEFT JOIN users u ON cp.author_id = u.id
-      ${whereClause}
-      ORDER BY cp.created_at DESC
-      LIMIT ? OFFSET ?
-    `;
-
-        const logs = await this.query(sql, queryArgs);
+        const [total, posts] = await Promise.all([
+            prisma.content_posts.count({ where }),
+            prisma.content_posts.findMany({
+                where,
+                include: {
+                    users: {
+                        select: {
+                            username: true,
+                            email: true
+                        }
+                    }
+                },
+                orderBy: {
+                    created_at: 'desc'
+                },
+                take: parseInt(limit),
+                skip: parseInt(offset)
+            })
+        ]);
 
         return {
-            data: logs,
+            data: posts.map(post => this.formatPost(post)),
             meta: {
                 page: parseInt(page),
                 limit: parseInt(limit),
@@ -73,36 +91,62 @@ class ContentPost {
      * Fetch calendar view (all posts within a date range)
      */
     static async getCalendar(teamId, startDate, endDate) {
-        const sql = `
-      SELECT cp.id, cp.title, cp.status, cp.scheduled_for, cp.platforms 
-      FROM content_posts cp
-      WHERE cp.team_id = ? AND cp.scheduled_for >= ? AND cp.scheduled_for <= ?
-      ORDER BY cp.scheduled_for ASC
-    `;
-        return this.query(sql, [teamId, startDate, endDate]);
+        const posts = await prisma.content_posts.findMany({
+            where: {
+                team_id: teamId,
+                scheduled_for: {
+                    gte: new Date(startDate),
+                    lte: new Date(endDate)
+                }
+            },
+            select: {
+                id: true,
+                title: true,
+                status: true,
+                scheduled_for: true,
+                platforms: true
+            },
+            orderBy: {
+                scheduled_for: 'asc'
+            }
+        });
+        return posts.map(post => this.formatPost(post));
     }
 
     /**
      * Fetch a single post by ID including media
      */
     static async findById(id, teamId) {
-        const sql = `
-      SELECT cp.*, u.name as author_name 
-      FROM content_posts cp
-      LEFT JOIN users u ON cp.author_id = u.id
-      WHERE cp.id = ? AND cp.team_id = ?
-    `;
-        const rows = await this.query(sql, [id, teamId]);
-        if (rows.length === 0) return null;
+        const post = await prisma.content_posts.findFirst({
+            where: {
+                id,
+                team_id: teamId
+            },
+            include: {
+                users: {
+                    select: {
+                        username: true
+                    }
+                },
+                content_media: true
+            }
+        });
 
-        const post = rows[0];
+        if (!post) return null;
 
-        // Fetch media
-        const mediaSql = 'SELECT * FROM content_media WHERE post_id = ?';
-        const media = await this.query(mediaSql, [id]);
+        // Map expected author_name
+        if (post.users) {
+            post.author_name = post.users.username;
+            delete post.users;
+        }
 
-        post.media = media;
-        return post;
+        // Map content_media to media
+        if (post.content_media) {
+            post.media = post.content_media;
+            delete post.content_media;
+        }
+
+        return this.formatPost(post);
     }
 
     /**
@@ -112,47 +156,54 @@ class ContentPost {
         const { team_id, author_id, title, content, platforms, status = 'draft', scheduled_for } = postData;
         const id = uuidv4();
 
-        const sql = `
-      INSERT INTO content_posts (id, team_id, author_id, title, content, platforms, status, scheduled_for)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `;
+        const platformsStr = platforms ? JSON.stringify(platforms) : JSON.stringify([]);
 
-        await this.query(sql, [
-            id, team_id, author_id, title, content,
-            platforms ? JSON.stringify(platforms) : JSON.stringify([]),
-            status, scheduled_for || null
-        ]);
+        const post = await prisma.content_posts.create({
+            data: {
+                id,
+                team_id,
+                author_id,
+                title,
+                content,
+                platforms: platformsStr,
+                status,
+                scheduled_for: scheduled_for ? new Date(scheduled_for) : null
+            }
+        });
 
-        return { id, team_id, author_id, title, content, platforms, status, scheduled_for };
+        return this.formatPost(post);
     }
 
     /**
      * Update an existing post
      */
     static async update(id, teamId, updates) {
-        let queryArgs = [];
-        let setClauses = [];
-
-        const allowedFields = ['title', 'content', 'status', 'scheduled_for'];
-
+        const data = {};
+        
+        const allowedFields = ['title', 'content', 'status'];
         allowedFields.forEach(field => {
             if (updates[field] !== undefined) {
-                setClauses.push(`${field} = ?`);
-                queryArgs.push(updates[field]);
+                data[field] = updates[field];
             }
         });
 
-        if (updates.platforms !== undefined) {
-            setClauses.push('platforms = ?');
-            queryArgs.push(JSON.stringify(updates.platforms));
+        if (updates.scheduled_for !== undefined) {
+            data.scheduled_for = updates.scheduled_for ? new Date(updates.scheduled_for) : null;
         }
 
-        if (setClauses.length === 0) return this.findById(id, teamId);
+        if (updates.platforms !== undefined) {
+            data.platforms = JSON.stringify(updates.platforms);
+        }
 
-        queryArgs.push(id, teamId);
-
-        const sql = `UPDATE content_posts SET ${setClauses.join(', ')} WHERE id = ? AND team_id = ?`;
-        await this.query(sql, queryArgs);
+        if (Object.keys(data).length > 0) {
+            await prisma.content_posts.updateMany({
+                where: {
+                    id,
+                    team_id: teamId
+                },
+                data
+            });
+        }
 
         return this.findById(id, teamId);
     }
@@ -161,7 +212,12 @@ class ContentPost {
      * Delete a post
      */
     static async delete(id, teamId) {
-        await this.query('DELETE FROM content_posts WHERE id = ? AND team_id = ?', [id, teamId]);
+        await prisma.content_posts.deleteMany({
+            where: {
+                id,
+                team_id: teamId
+            }
+        });
         return true;
     }
 }

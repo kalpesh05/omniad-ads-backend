@@ -1,4 +1,4 @@
-const { pool } = require('../config/database');
+const prisma = require('../config/prisma');
 const crypto = require('crypto');
 
 class RefreshToken {
@@ -19,55 +19,69 @@ class RefreshToken {
     // Remove existing tokens for this user
     await RefreshToken.deleteByUserId(userId);
 
-    const [result] = await pool.execute(
-      'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?, ?, ?)',
-      [userId, token, expiresAt]
-    );
+    const createdToken = await prisma.refresh_tokens.create({
+      data: {
+        user_id: parseInt(userId),
+        token,
+        expires_at: expiresAt
+      }
+    });
 
-    return await RefreshToken.findById(result.insertId);
+    return new RefreshToken(createdToken);
   }
 
   // Find token by ID
   static async findById(id) {
-    const [rows] = await pool.execute(
-      'SELECT * FROM refresh_tokens WHERE id = ?',
-      [id]
-    );
+    const token = await prisma.refresh_tokens.findFirst({
+      where: {
+        id: parseInt(id)
+      }
+    });
 
-    return rows.length > 0 ? new RefreshToken(rows[0]) : null;
+    return token ? new RefreshToken(token) : null;
   }
 
   // Find token by token string
   static async findByToken(token) {
-    const [rows] = await pool.execute(
-      'SELECT * FROM refresh_tokens WHERE token = ? AND expires_at > NOW()',
-      [token]
-    );
+    const foundToken = await prisma.refresh_tokens.findFirst({
+      where: {
+        token,
+        expires_at: {
+          gt: new Date()
+        }
+      }
+    });
 
-    return rows.length > 0 ? new RefreshToken(rows[0]) : null;
+    return foundToken ? new RefreshToken(foundToken) : null;
   }
 
   // Delete token by user ID
   static async deleteByUserId(userId) {
-    await pool.execute(
-      'DELETE FROM refresh_tokens WHERE user_id = ?',
-      [userId]
-    );
+    await prisma.refresh_tokens.deleteMany({
+      where: {
+        user_id: parseInt(userId)
+      }
+    });
   }
 
   // Delete token by token string
   static async deleteByToken(token) {
-    await pool.execute(
-      'DELETE FROM refresh_tokens WHERE token = ?',
-      [token]
-    );
+    await prisma.refresh_tokens.deleteMany({
+      where: {
+        token
+      }
+    });
   }
 
   // Clean expired tokens
   static async cleanExpired() {
-    await pool.execute(
-      'DELETE FROM refresh_tokens WHERE expires_at <= NOW()'
-    );
+    await prisma.refresh_tokens.deleteMany({
+      where: {
+        expires_at: {
+          lte: new Date()
+        }
+      }
+    });
   }
 
   // Check if token is expired
@@ -77,10 +91,11 @@ class RefreshToken {
 
   // Delete this token
   async delete() {
-    await pool.execute(
-      'DELETE FROM refresh_tokens WHERE id = ?',
-      [this.id]
-    );
+    await prisma.refresh_tokens.deleteMany({
+      where: {
+        id: this.id
+      }
+    });
   }
 }
 

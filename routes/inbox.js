@@ -55,4 +55,34 @@ router.get('/messages', inboxController.getMessages);
  */
 router.post('/messages/:id/reply', inboxController.replyToMessage);
 
+/**
+ * @swagger
+ * /inbox/messages/{id}/suggest-reply:
+ *   post:
+ *     summary: Generate an AI reply suggestion for a message
+ *     tags: [Inbox]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               teamId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Suggestion generated successfully
+ */
+router.post('/messages/:id/suggest-reply', inboxController.suggestReply);
+router.post('/messages/seed', inboxController.seedMessage);
+
 module.exports = router;

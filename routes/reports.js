@@ -1,5 +1,5 @@
 const express = require('express');
-const AdsController = require('../controllers/adsController');
+const ReportController = require('../controllers/ads/reportController');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
@@ -42,7 +42,7 @@ const router = express.Router();
  *       201:
  *         description: Report generated successfully
  */
-router.post('/generate', authenticateToken, AdsController.generateReport);
+router.post('/generate', authenticateToken, ReportController.generateReport);
 
 /**
  * @swagger
@@ -65,7 +65,7 @@ router.post('/generate', authenticateToken, AdsController.generateReport);
  *       200:
  *         description: Reports retrieved successfully
  */
-router.get('/', authenticateToken, AdsController.getReports);
+router.get('/', authenticateToken, ReportController.getReports);
 
 /**
  * @swagger
@@ -89,7 +89,7 @@ router.get('/', authenticateToken, AdsController.getReports);
  *             schema:
  *               type: string
  */
-router.get('/:id/download', authenticateToken, AdsController.downloadReport);
+router.get('/:id/download', authenticateToken, ReportController.downloadReport);
 
 module.exports = router;
 

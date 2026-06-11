@@ -1616,6 +1616,7 @@ class AdPlatformAuthenticator {
     return {
       access_token: tokenRecord.access_token,
       refresh_token: tokenRecord.refresh_token ? tokenRecord.refresh_token : null,
+      expires_at: tokenRecord.expiry_date,
       expires_date: tokenRecord.expiry_date, // Ensuring naming matches AuthStatus expectations
       last_refreshed: tokenRecord.last_refreshed
     };
@@ -1718,7 +1719,7 @@ class AdPlatformAuthenticator {
       platformStatus[platform] = {
         isAuthenticated: !!tokens.access_token,
         hasRefreshToken: !!tokens.refresh_token,
-        expiry_date: tokenData.expiry_date,
+        expiry_date: tokens.expires_date,
         needsRefresh: tokens.access_token ? this.isTokenExpiringSoon(tokens) : false,
         lastRefreshed: tokens.last_refreshed
       };

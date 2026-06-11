@@ -1,251 +1,111 @@
-# Express MySQL JWT Authentication Backend
+# OmniAds Backend REST API
 
-A production-ready Node.js Express backend with MySQL database, JWT authentication, and role-based authorization.
+This repository houses the core Node.js Express engine for the OmniAds platform. It orchestrates user authentication, OAuth platform integration (Meta Ads, Google Ads, YouTube, LinkedIn, GA4), ad account syncing, automatic performance metric updates, generative AI assistance, multi-tenant workspace administration (Teams, Roles, Audit Logs), and Stripe subscriptions.
 
-## Features
+---
 
-- 🔐 **JWT Authentication** - Secure token-based authentication
-- 👥 **Role-Based Authorization** - Admin, Moderator, and User roles
-- 🔗 **Platform Integrations** - Automated OAuth & Token Refresh for Facebook, Instagram, Meta, Google Ads, Analytics & YouTube
-- 🗄️ **MySQL Database** - Robust relational database with connection pooling
-- 🔒 **Security Features** - Rate limiting, CORS, security headers, input validation
-- 📝 **Input Validation** - Comprehensive validation with detailed error messages
-- 🔄 **Refresh Tokens** - Secure token refresh mechanism
-- 🏗️ **Clean Architecture** - Well-structured codebase with separation of concerns
-- 📊 **Error Handling** - Centralized error handling with detailed logging
-- 🚀 **Production Ready** - Environment-based configuration and security
+## 🚀 Key Modules & System Architecture
 
-## Project Structure
+*   **Platform Connectors & OAuth Engine**: The backend handles the complete OAuth authorization flow and tokens (stored in `ads_tokens` table) with automatically managed background refresh tokens.
+*   **Ad Campaign Synchronizer**: Standardized synchronization managers fetch campaigns, creatives, and metrics dynamically and cache them in local database tables to speed up client-side dashboards.
+*   **Workspace Collaboration**: Supports workspaces (`teams` table) with role permissions (`admin`, `manager`, `editor`, `viewer`) and comprehensive activity tracing via the `audit_logs` table.
+*   **Stripe SaaS Integrations**: Active subscription plan tier tracking (`subscriptions` table) with webhook handlers that listen for billing updates.
+*   **Generative AI Pipeline**: Unified interface utilizing OpenAI, Anthropic, and Gemini SDKs for content ideation and copywriting recommendations.
+*   **Background Jobs Manager**: Cron jobs configured in [cron/](file:///C:/Users/Admin/Desktop/stackby/omniads/omnin-ads-backend/cron) run synchronization, email reminders, and content publication tasks in the background.
 
-```
+---
+
+## 📁 Repository Structure
+
+```text
+omnin-ads-backend/
 ├── config/
-│   └── database.js          # Database configuration and connection
+│   ├── database.js          # MySQL connection pooling, database verification, & table migrations
+│   └── plans.js             # Subscription pricing plans and limits
 ├── controllers/
-│   ├── authController.js    # Authentication logic
-│   └── userController.js    # User management logic
+│   ├── authController.js    # JWT register/login endpoints
+│   ├── adsController.js     # Unified ad platform synchronizer & manager (Campaigns, AdGroups, Creatives)
+│   ├── aiController.js      # Generative copywriting & insights coordinator
+│   ├── teamController.js    # Workspace member management
+│   └── billingController.js # Stripe sessions and webhook handler
+├── cron/
+│   └── syncJobs.js          # Scheduled task synchronizers
 ├── middleware/
-│   ├── auth.js             # Authentication & authorization middleware
-│   ├── validation.js       # Input validation middleware
-│   ├── security.js         # Security middleware (rate limiting, etc.)
-│   └── errorHandler.js     # Global error handling
-├── models/
-│   ├── User.js             # User model
-│   └── RefreshToken.js     # Refresh token model
-├── routes/
-│   ├── index.js            # API info and health check routes
-│   ├── auth.js             # Authentication routes
-│   └── users.js            # User management routes
-├── utils/
-│   ├── jwt.js              # JWT utility functions
-│   └── response.js         # Standardized API responses
-├── app.js                  # Express application setup
-├── server.js               # Server startup and configuration
-├── .env                    # Environment variables
-└── README.md               # Project documentation
+│   ├── auth.js              # Token validators & workspace role gatekeepers
+│   ├── security.js          # Rate limiter configs & security headers
+│   └── errorHandler.js      # Consolidated error handler
+├── models/                  # Direct SQL entities (User, Campaign, ConnectedAccount, Team)
+├── routes/                  # Express HTTP router declarations
+├── services/                # External APIs integrations (MetaAds, GoogleAds, LinkedIn, AI)
+├── utils/                   # Shared utility modules (JWT signature generation, responders)
+├── app.js                   # Application wrapper & middleware mapping
+└── server.js                # Server listener initializer
 ```
 
-## Quick Start
+---
+
+## 🛠️ Tech Stack & Key Libraries
+
+*   **Runtime Environment**: Node.js (ES6 JavaScript)
+*   **Application Framework**: Express.js
+*   **Database Engine**: MySQL (v5.7+) connected via the `mysql2` client
+*   **Encryption & Security**: JSON Web Tokens (`jsonwebtoken`), password hashing (`bcryptjs`), secure headers (`helmet`), IP limiter (`express-rate-limit`)
+*   **Payment Processing**: Stripe SDK
+*   **AI Pipelines**: `@anthropic-ai/sdk`, `@google/genai`, `openai`
+*   **Scheduling**: `node-cron`
+
+---
+
+## 💻 Getting Started
 
 ### Prerequisites
 
-- Node.js (v14 or higher)
-- MySQL (v5.7 or higher)
-- npm or yarn
+*   Node.js (v18 or higher)
+*   MySQL Server (v5.7+)
+*   npm or yarn
 
-### Installation
+### Installation & Local Setup
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+1.  **Clone the project and navigate to the directory:**
+    ```bash
+    cd omnin-ads-backend
+    ```
 
-2. **Set up environment variables:**
-   ```bash
-   cp .env.example .env
-   ```
-   Edit `.env` with your database credentials and JWT secret.
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
 
-3. **Create MySQL database:**
-   ```sql
-   CREATE DATABASE express_auth_db;
-   ```
+3.  **Configure Environment Variables:**
+    Duplicate `.env.example` to create your own configuration file:
+    ```bash
+    cp .env.example .env
+    ```
+    Configure the following values inside `.env`:
+    *   `PORT` (default: 3000)
+    *   `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` (MySQL connection info)
+    *   `JWT_SECRET`, `JWT_EXPIRE`
+    *   Stripe Keys (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`)
+    *   AI Keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`)
+    *   Platform API credentials (Google Ads Client ID/Secret, Facebook App ID/Secret, LinkedIn Client ID/Secret)
 
-4. **Start the server:**
-   ```bash
-   # Development
-   npm run dev
+4.  **Create local Database:**
+    The server will automatically generate the database and create tables on its first boot. You only need to ensure the database server is running. If you want to create it manually, execute:
+    ```sql
+    CREATE DATABASE IF NOT EXISTS omniads_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    ```
 
-   # Production
-   npm start
-   ```
+5.  **Start Development Server:**
+    ```bash
+    npm run dev
+    ```
+    The REST API will be accessible at `http://localhost:3000`.
 
-The server will automatically create the necessary database tables on first run.
+---
 
-## Integrated Authentication Platforms
+## 🔒 Security Implementations
 
-The application features a built-in `AdPlatformAuthenticator` utility to securely connect, manage, and automatically refresh OAuth tokens across major advertising ecosystems:
-
-### Meta Ecosystem
-- **Facebook Ads** (`ads_management`, `pages_manage_ads`)
-- **Instagram Ads** (`instagram_basic`, `instagram_manage_insights`)
-- **Meta Business Management** (`business_management`, `catalog_management`)
-
-### Google Ecosystem
-- **Google Ads** (`https://www.googleapis.com/auth/adwords`)
-- **Google Analytics** (`https://www.googleapis.com/auth/analytics`)
-- **YouTube** (`https://www.googleapis.com/auth/youtube`)
-
-Tokens are securely stored in the `ads_tokens` table and are configured to auto-refresh natively whenever `AdPlatformAuthenticator.getValidAccessToken()` is called.
-
-## API Endpoints
-
-### Authentication
-
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|---------|
-| POST | `/api/auth/register` | Register new user | Public |
-| POST | `/api/auth/login` | User login | Public |
-| POST | `/api/auth/refresh-token` | Refresh access token | Public |
-| POST | `/api/auth/logout` | User logout | Private |
-| GET | `/api/auth/profile` | Get user profile | Private |
-| PUT | `/api/auth/profile` | Update user profile | Private |
-| PUT | `/api/auth/change-password` | Change password | Private |
-
-### User Management
-
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|---------|
-| GET | `/api/users` | Get all users | Admin/Moderator |
-| GET | `/api/users/:id` | Get user by ID | Admin/Moderator |
-| PUT | `/api/users/:id` | Update user | Admin/Moderator |
-| DELETE | `/api/users/:id` | Delete user | Admin |
-| GET | `/api/users/stats` | Get user statistics | Admin/Moderator |
-
-### Utility
-
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|---------|
-| GET | `/api/health` | Health check | Public |
-| GET | `/api` | API information | Public |
-
-## User Roles
-
-- **Admin**: Full access to all endpoints
-- **Moderator**: Can view and update users (except role changes)
-- **User**: Can only access their own profile
-
-## Request/Response Examples
-
-### Registration
-```bash
-POST /api/auth/register
-Content-Type: application/json
-
-{
-  "username": "johndoe",
-  "email": "john@example.com",
-  "password": "SecurePass123!",
-  "confirmPassword": "SecurePass123!"
-}
-```
-
-### Login
-```bash
-POST /api/auth/login
-Content-Type: application/json
-
-{
-  "email": "john@example.com",
-  "password": "SecurePass123!"
-}
-```
-
-### Protected Requests
-```bash
-GET /api/auth/profile
-Authorization: Bearer <your-jwt-token>
-```
-
-## Security Features
-
-- **JWT Tokens**: Secure authentication with configurable expiration
-- **Refresh Tokens**: Long-lived tokens for seamless user experience
-- **Rate Limiting**: Prevents brute force attacks
-- **Password Hashing**: Bcrypt with configurable salt rounds
-- **Input Validation**: Comprehensive validation with sanitization
-- **CORS Protection**: Configurable cross-origin resource sharing
-- **Security Headers**: Helmet.js for security headers
-- **SQL Injection Prevention**: Parameterized queries
-
-## Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PORT` | Server port | 3000 |
-| `NODE_ENV` | Environment | development |
-| `DB_HOST` | MySQL host | localhost |
-| `DB_USER` | MySQL username | root |
-| `DB_PASSWORD` | MySQL password | - |
-| `DB_NAME` | Database name | express_auth_db |
-| `DB_PORT` | MySQL port | 3306 |
-| `JWT_SECRET` | JWT signing secret | - |
-| `JWT_EXPIRE` | JWT expiration | 7d |
-| `BCRYPT_SALT_ROUNDS` | Password hashing rounds | 12 |
-
-## Database Schema
-
-### Users Table
-```sql
-CREATE TABLE users (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  username VARCHAR(50) UNIQUE NOT NULL,
-  email VARCHAR(100) UNIQUE NOT NULL,
-  password VARCHAR(255) NOT NULL,
-  role ENUM('admin', 'user', 'moderator') DEFAULT 'user',
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-```
-
-### Refresh Tokens Table
-```sql
-CREATE TABLE refresh_tokens (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT NOT NULL,
-  token VARCHAR(500) NOT NULL,
-  expires_at TIMESTAMP NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-```
-
-## Error Handling
-
-The API returns consistent error responses:
-
-```json
-{
-  "success": false,
-  "message": "Error description",
-  "errors": [
-    {
-      "field": "email",
-      "message": "Please provide a valid email address",
-      "value": "invalid-email"
-    }
-  ]
-}
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License.
+*   **IP-Based Rate Limiting**: Limit API requests globally and set strict rate limiting on registration and login endpoints to prevent brute-force attacks.
+*   **Parameterized SQL Queries**: No raw string concats are used in database operations to prevent SQL injection.
+*   **Secure Headers (Helmet)**: Sets standard HTTP headers to protect against common cross-site attacks.
+*   **Role-Based Access Control**: Standard route structures check token signatures and compare database membership roles before returning workspace records.

@@ -30,6 +30,7 @@ const inboxRoutes = require('./routes/inbox');
 const settingsRoutes = require('./routes/settings');
 const billingRoutes = require('./routes/billing');
 const dashboardRoutes = require('./routes/dashboard');
+const brandRoutes = require('./routes/brand');
 
 // Import database
 const { dbReady, testConnection, initializeDatabase } = require('./config/database');
@@ -92,6 +93,7 @@ app.use('/api/inbox', inboxRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/brand', brandRoutes);
 
 // Error handling middleware
 app.use(notFoundHandler);

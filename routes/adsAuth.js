@@ -130,4 +130,25 @@ router.get('/auth-status/full', AdsAuthController.getFullAuthStatus);
  */
 router.post('/refresh-tokens', AdsAuthController.refreshTokens);
 
+/**
+ * @swagger
+ * /api/ads-auth/platform/{platform}:
+ *   delete:
+ *     summary: Disconnect a platform
+ *     tags: [Ads Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: platform
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The platform name to disconnect
+ *     responses:
+ *       200:
+ *         description: Platform disconnected successfully
+ */
+router.delete('/platform/:platform', AdsAuthController.disconnectPlatform);
+
 module.exports = router;

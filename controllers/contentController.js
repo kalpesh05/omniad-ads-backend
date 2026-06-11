@@ -5,12 +5,89 @@ const Subscription = require('../models/Subscription');
 const { getPlanByPriceId } = require('../config/plans');
 const { validationResult } = require('express-validator');
 
+const ensureMockPosts = async (teamId, authorId) => {
+    const [countRow] = await require('../config/database').pool.execute(
+        'SELECT COUNT(*) as count FROM content_posts WHERE team_id = ?',
+        [teamId]
+    );
+
+    if (countRow[0].count === 0) {
+        const uuid = require('uuid');
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth();
+
+        const mockPosts = [
+            {
+                id: uuid.v4(),
+                team_id: teamId,
+                author_id: authorId,
+                title: 'Product Launch Teaser',
+                content: 'We are thrilled to give you a sneak peek of our newest product release! Stay tuned for more details.',
+                platforms: ['instagram', 'facebook'],
+                status: 'scheduled',
+                scheduled_for: new Date(year, month, today.getDate() + 2, 9, 0, 0)
+            },
+            {
+                id: uuid.v4(),
+                team_id: teamId,
+                author_id: authorId,
+                title: 'Weekly Tips Carousel',
+                content: 'Here are 5 ways to double your conversion rate with organic social strategies.',
+                platforms: ['instagram', 'linkedin'],
+                status: 'scheduled',
+                scheduled_for: new Date(year, month, today.getDate() + 4, 12, 0, 0)
+            },
+            {
+                id: uuid.v4(),
+                team_id: teamId,
+                author_id: authorId,
+                title: 'Behind the Scenes',
+                content: 'Meet the team behind growthOS. Hard at work building the future of digital ads.',
+                platforms: ['instagram'],
+                status: 'draft',
+                scheduled_for: new Date(year, month, today.getDate() + 6, 18, 0, 0)
+            },
+            {
+                id: uuid.v4(),
+                team_id: teamId,
+                author_id: authorId,
+                title: 'Case Study Thread',
+                content: 'How our client increased their monthly active users by 300% in just 90 days. A full breakdown.',
+                platforms: ['linkedin'],
+                status: 'scheduled',
+                scheduled_for: new Date(year, month, today.getDate() + 8, 10, 0, 0)
+            },
+            {
+                id: uuid.v4(),
+                team_id: teamId,
+                author_id: authorId,
+                title: 'Weekend Promo',
+                content: 'Get 20% off all plans this weekend only! Use code WEEKEND20 at checkout.',
+                platforms: ['facebook', 'instagram'],
+                status: 'scheduled',
+                scheduled_for: new Date(year, month, today.getDate() + 10, 11, 0, 0)
+            }
+        ];
+
+        for (const post of mockPosts) {
+            await require('../config/database').pool.execute(
+                `INSERT INTO content_posts (id, team_id, author_id, title, content, platforms, status, scheduled_for)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [post.id, post.team_id, post.author_id, post.title, post.content, JSON.stringify(post.platforms), post.status, post.scheduled_for]
+            );
+        }
+    }
+};
+
 exports.getPosts = async (req, res) => {
     try {
         const { teamId } = req.query;
         if (!teamId) {
             return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'teamId is required' } });
         }
+
+        await ensureMockPosts(teamId, req.user.id);
 
         const options = {
             page: parseInt(req.query.page) || 1,
@@ -155,6 +232,8 @@ exports.getCalendar = async (req, res) => {
         if (!teamId || !startDate || !endDate) {
             return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'teamId, startDate, and endDate are required' } });
         }
+
+        await ensureMockPosts(teamId, req.user.id);
 
         const calendar = await ContentPost.getCalendar(teamId, startDate, endDate);
         res.status(200).json({ success: true, data: calendar });

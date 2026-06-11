@@ -135,4 +135,6 @@ router.put('/:teamId/members/:userId', [
 
 router.delete('/:teamId/members/:userId', teamController.removeMember);
 
+router.get('/:teamId/members', teamController.getTeamMembers);
+
 module.exports = router;

@@ -1,41 +1,46 @@
-const { pool } = require('../config/database');
+const prisma = require('../config/prisma');
 const { v4: uuidv4 } = require('uuid');
 
 class Team {
     /**
-     * Run raw queries safely
-     */
-    static async query(sql, params) {
-        const [rows, fields] = await pool.execute(sql, params);
-        return rows;
-    }
-
-    /**
      * Find a team by its ID
      */
     static async findById(id) {
-        const rows = await this.query('SELECT * FROM teams WHERE id = ?', [id]);
-        return rows[0];
+        return await prisma.teams.findFirst({
+            where: {
+                id
+            }
+        });
     }
 
     /**
      * Find all teams owned by a specific user
      */
     static async findByOwner(userId) {
-        return this.query('SELECT * FROM teams WHERE owner_id = ?', [userId]);
+        return await prisma.teams.findMany({
+            where: {
+                owner_id: parseInt(userId)
+            }
+        });
     }
 
     /**
      * Find teams a user belongs to (either owner or invited member)
      */
     static async findUserTeams(userId) {
-        const query = `
-      SELECT t.id, t.name, t.slug, t.owner_id, t.plan, t.settings, t.created_at, tm.role 
-      FROM teams t 
-      JOIN team_members tm ON t.id = tm.team_id 
-      WHERE tm.user_id = ?
-    `;
-        return this.query(query, [userId]);
+        const teamMembers = await prisma.team_members.findMany({
+            where: {
+                user_id: parseInt(userId)
+            },
+            include: {
+                teams: true
+            }
+        });
+
+        return teamMembers.map(tm => ({
+            ...tm.teams,
+            role: tm.role
+        }));
     }
 
     /**
@@ -47,9 +52,13 @@ class Team {
 
         while (true) {
             const currentSlug = counter === 1 ? slug : `${slug}-${counter}`;
-            const rows = await this.query('SELECT id FROM teams WHERE slug = ?', [currentSlug]);
+            const count = await prisma.teams.count({
+                where: {
+                    slug: currentSlug
+                }
+            });
 
-            if (rows.length === 0) {
+            if (count === 0) {
                 return currentSlug; // Available!
             }
             counter++;
@@ -70,24 +79,34 @@ class Team {
         if (!slug) {
             slug = await this.getUniqueSlug(name);
         } else {
-            const rows = await this.query('SELECT id FROM teams WHERE slug = ?', [slug]);
-            if (rows.length > 0) throw new Error('Slug already exists');
+            const count = await prisma.teams.count({
+                where: {
+                    slug
+                }
+            });
+            if (count > 0) throw new Error('Slug already exists');
         }
 
         const settings = JSON.stringify({});
 
         // Create the team
-        await this.query(
-            'INSERT INTO teams (id, name, slug, owner_id, plan, settings) VALUES (?, ?, ?, ?, ?, ?)',
-            [id, name, slug, owner_id, plan, settings]
-        );
+        const team = await prisma.teams.create({
+            data: {
+                id,
+                name,
+                slug,
+                owner_id: parseInt(owner_id),
+                plan,
+                settings
+            }
+        });
 
         return {
-            id,
-            name,
-            slug,
-            owner_id,
-            plan,
+            id: team.id,
+            name: team.name,
+            slug: team.slug,
+            owner_id: team.owner_id,
+            plan: team.plan,
             settings: {}
         };
     }
@@ -96,29 +115,28 @@ class Team {
      * Update a team
      */
     static async update(id, updates) {
-        let queryArgs = [];
-        let setClauses = [];
+        const data = {};
 
         if (updates.name) {
-            setClauses.push('name = ?');
-            queryArgs.push(updates.name);
+            data.name = updates.name;
         }
 
         if (updates.slug) {
-            setClauses.push('slug = ?');
-            queryArgs.push(updates.slug);
+            data.slug = updates.slug;
         }
 
         if (updates.settings) {
-            setClauses.push('settings = ?');
-            queryArgs.push(JSON.stringify(updates.settings));
+            data.settings = JSON.stringify(updates.settings);
         }
 
-        if (setClauses.length === 0) return null;
+        if (Object.keys(data).length === 0) return null;
 
-        queryArgs.push(id);
-        const sql = `UPDATE teams SET ${setClauses.join(', ')} WHERE id = ?`;
-        await this.query(sql, queryArgs);
+        await prisma.teams.update({
+            where: {
+                id
+            },
+            data
+        });
 
         return this.findById(id);
     }
@@ -127,7 +145,11 @@ class Team {
      * Delete a team
      */
     static async delete(id) {
-        await this.query('DELETE FROM teams WHERE id = ?', [id]);
+        await prisma.teams.deleteMany({
+            where: {
+                id
+            }
+        });
         return true;
     }
 }

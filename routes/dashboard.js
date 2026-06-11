@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const AdsController = require('../controllers/adsController');
+const AnalyticsController = require('../controllers/ads/analyticsController');
 const { authenticateToken } = require('../middleware/auth');
 
 router.use(authenticateToken);
 
-router.get('/overview', AdsController.getDashboardOverviewGeneric);
+router.get('/overview', AnalyticsController.getDashboardOverviewGeneric);
 
 module.exports = router;

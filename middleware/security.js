@@ -1,11 +1,10 @@
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 
-// Rate limiting configuration
 const createRateLimit = (windowMs, max, message) => {
   return rateLimit({
     windowMs,
-    max,
+    max: process.env.NODE_ENV === 'test' ? 1000 : max,
     message: {
       success: false,
       message: message || 'Too many requests, please try again later'

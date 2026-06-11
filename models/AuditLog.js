@@ -1,15 +1,7 @@
-const { pool } = require('../config/database');
+const prisma = require('../config/prisma');
 const { v4: uuidv4 } = require('uuid');
 
 class AuditLog {
-    /**
-     * Run raw queries safely
-     */
-    static async query(sql, params) {
-        const [rows, fields] = await pool.execute(sql, params);
-        return rows;
-    }
-
     /**
      * Log an action (usually called internally by other controllers)
      */
@@ -20,16 +12,20 @@ class AuditLog {
             const ipAddress = req.ip || req.connection.remoteAddress || null;
             const userAgent = req.headers ? req.headers['user-agent'] : null;
 
-            const sql = `
-        INSERT INTO audit_logs 
-        (id, team_id, user_id, action, resource, resource_id, resource_name, details, ip_address, user_agent) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-
-            await this.query(sql, [
-                id, teamId, userId, action, resource, resourceId, resourceName,
-                JSON.stringify(details), ipAddress, userAgent
-            ]);
+            await prisma.audit_logs.create({
+                data: {
+                    id,
+                    team_id: teamId,
+                    user_id: userId,
+                    action,
+                    resource,
+                    resource_id: resourceId,
+                    resource_name: resourceName,
+                    details: JSON.stringify(details),
+                    ip_address: ipAddress,
+                    user_agent: userAgent
+                }
+            });
 
             return true;
         } catch (error) {
@@ -55,53 +51,62 @@ class AuditLog {
 
         const offset = (page - 1) * limit;
 
-        let queryArgs = [teamId];
-        let whereClause = 'WHERE al.team_id = ?';
+        const where = {
+            team_id: teamId
+        };
 
         if (userId) {
-            whereClause += ' AND al.user_id = ?';
-            queryArgs.push(userId);
+            where.user_id = parseInt(userId);
         }
 
         if (action) {
-            whereClause += ' AND al.action = ?';
-            queryArgs.push(action);
+            where.action = action;
         }
 
         if (resource) {
-            whereClause += ' AND al.resource = ?';
-            queryArgs.push(resource);
+            where.resource = resource;
         }
 
-        if (startDate) {
-            whereClause += ' AND al.created_at >= ?';
-            queryArgs.push(startDate);
+        if (startDate || endDate) {
+            where.created_at = {};
+            if (startDate) {
+                where.created_at.gte = new Date(startDate);
+            }
+            if (endDate) {
+                where.created_at.lte = new Date(endDate);
+            }
         }
 
-        if (endDate) {
-            whereClause += ' AND al.created_at <= ?';
-            queryArgs.push(endDate);
-        }
+        const [total, logs] = await Promise.all([
+            prisma.audit_logs.count({ where }),
+            prisma.audit_logs.findMany({
+                where,
+                include: {
+                    users: {
+                        select: {
+                            username: true,
+                            email: true
+                        }
+                    }
+                },
+                orderBy: {
+                    created_at: 'desc'
+                },
+                take: parseInt(limit),
+                skip: parseInt(offset)
+            })
+        ]);
 
-        const countSql = `SELECT COUNT(*) as total FROM audit_logs al ${whereClause}`;
-        const [countRows] = await pool.execute(countSql, queryArgs);
-        const total = countRows[0].total;
-
-        queryArgs.push(parseInt(limit), parseInt(offset));
-
-        const sql = `
-      SELECT al.*, u.name as user_name, u.email as user_email 
-      FROM audit_logs al
-      LEFT JOIN users u ON al.user_id = u.id
-      ${whereClause}
-      ORDER BY al.created_at DESC
-      LIMIT ? OFFSET ?
-    `;
-
-        const logs = await this.query(sql, queryArgs);
+        // Map logs to return user_name and user_email format
+        const mappedLogs = logs.map(log => ({
+            ...log,
+            user_name: log.users ? log.users.username : null,
+            user_email: log.users ? log.users.email : null,
+            users: undefined // remove relation object
+        }));
 
         return {
-            data: logs,
+            data: mappedLogs,
             meta: {
                 page: parseInt(page),
                 limit: parseInt(limit),

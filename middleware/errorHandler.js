@@ -1,62 +1,76 @@
-const { errorResponse } = require('../utils/response');
-
 // Global error handler
 const errorHandler = (err, req, res, next) => {
   console.error('Error:', err);
 
+  let statusCode = err.statusCode || 500;
+  let code = err.code || 'INTERNAL_ERROR';
+  let message = err.message || 'Internal Server Error';
+
   // Database connection errors
-  if (err.code === 'PROTOCOL_CONNECTION_LOST') {
-    return errorResponse(res, 'Database connection lost', 503);
-  }
-
-  if (err.code === 'ER_ACCESS_DENIED_ERROR') {
-    return errorResponse(res, 'Database access denied', 503);
-  }
-
-  if (err.code === 'ECONNREFUSED') {
-    return errorResponse(res, 'Database connection refused', 503);
-  }
-
-  // MySQL errors
-  if (err.code === 'ER_DUP_ENTRY') {
-    return errorResponse(res, 'Duplicate entry detected', 409);
-  }
-
-  if (err.code === 'ER_NO_SUCH_TABLE') {
-    return errorResponse(res, 'Database table not found', 500);
+  if (err.code === 'PROTOCOL_CONNECTION_LOST' || err.code === 'ECONNREFUSED') {
+    statusCode = 503;
+    code = 'DATABASE_CONNECTION_ERROR';
+    message = 'Database service unavailable';
+  } else if (err.code === 'ER_ACCESS_DENIED_ERROR') {
+    statusCode = 503;
+    code = 'DATABASE_ACCESS_ERROR';
+    message = 'Database access denied';
+  } else if (err.code === 'ER_DUP_ENTRY') {
+    statusCode = 409;
+    code = 'DUPLICATE_ENTRY';
+    message = 'Duplicate entry detected';
+  } else if (err.code === 'ER_NO_SUCH_TABLE') {
+    statusCode = 500;
+    code = 'DATABASE_TABLE_ERROR';
+    message = 'Database table not found';
   }
 
   // JWT errors
   if (err.name === 'TokenExpiredError') {
-    return errorResponse(res, 'Token expired', 401);
-  }
-
-  if (err.name === 'JsonWebTokenError') {
-    return errorResponse(res, 'Invalid token', 401);
+    statusCode = 401;
+    code = 'TOKEN_EXPIRED';
+    message = 'Token expired';
+  } else if (err.name === 'JsonWebTokenError') {
+    statusCode = 401;
+    code = 'INVALID_TOKEN';
+    message = 'Invalid token';
   }
 
   // Validation errors
   if (err.name === 'ValidationError') {
-    return errorResponse(res, err.message, 400);
+    statusCode = 400;
+    code = 'VALIDATION_ERROR';
   }
 
-  // Cast errors (invalid ObjectId, etc.)
+  // Cast errors
   if (err.name === 'CastError') {
-    return errorResponse(res, 'Invalid ID format', 400);
+    statusCode = 400;
+    code = 'INVALID_ID';
+    message = 'Invalid ID format';
   }
 
-  // Default server error
-  const statusCode = err.statusCode || 500;
-  const message = process.env.NODE_ENV === 'production' 
-    ? 'Internal Server Error' 
-    : err.message || 'Internal Server Error';
+  if (process.env.NODE_ENV === 'production' && statusCode === 500) {
+    message = 'Internal Server Error';
+  }
 
-  return errorResponse(res, message, statusCode);
+  return res.status(statusCode).json({
+    success: false,
+    error: {
+      code,
+      message
+    }
+  });
 };
 
 // 404 handler
 const notFoundHandler = (req, res) => {
-  errorResponse(res, `Route ${req.originalUrl} not found`, 404);
+  res.status(404).json({
+    success: false,
+    error: {
+      code: 'NOT_FOUND',
+      message: `Route ${req.originalUrl} not found`
+    }
+  });
 };
 
 module.exports = {

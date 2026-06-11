@@ -103,7 +103,7 @@ router.post('/optimize-budget', aiController.optimizeBudget);
 router.get('/anomalies', aiController.getAnomalies);
 
 // Preserve legacy chat for broader system compatibility
-const AdsController = require('../controllers/adsController');
-router.post('/chat', AdsController.aiChat);
+const AnalyticsController = require('../controllers/ads/analyticsController');
+router.post('/chat', AnalyticsController.aiChat);
 
 module.exports = router;

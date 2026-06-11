@@ -1,0 +1,437 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model ads_accounts {
+  id            Int             @id @default(autoincrement())
+  token_id      Int
+  account_id    String          @db.VarChar(255)
+  account_name  String          @db.VarChar(255)
+  currency      String?         @db.VarChar(10)
+  status        String?         @db.VarChar(50)
+  is_active     Boolean?        @default(true)
+  created_at    DateTime        @default(now()) @db.Timestamp(0)
+  updated_at    DateTime        @default(now()) @db.Timestamp(0)
+  ads_tokens    ads_tokens      @relation(fields: [token_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "ads_accounts_ibfk_1")
+  ads_campaigns ads_campaigns[]
+
+  @@unique([token_id, account_id], map: "unique_account_per_token")
+}
+
+model ads_campaigns {
+  id            Int             @id @default(autoincrement())
+  account_id    Int
+  campaign_id   String          @db.VarChar(255)
+  campaign_name String          @db.VarChar(255)
+  status        String?         @db.VarChar(50)
+  objective     String?         @db.VarChar(100)
+  budget        Decimal?        @db.Decimal(10, 2)
+  start_date    DateTime        @default(now()) @db.Timestamp(0)
+  end_date      DateTime        @default(now()) @db.Timestamp(0)
+  created_at    DateTime        @default(now()) @db.Timestamp(0)
+  updated_at    DateTime        @default(now()) @db.Timestamp(0)
+  ads_accounts  ads_accounts    @relation(fields: [account_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "ads_campaigns_ibfk_1")
+  ads_creatives ads_creatives[]
+  ads_insights  ads_insights[]
+
+  @@unique([account_id, campaign_id], map: "unique_campaign_per_account")
+}
+
+model ads_creatives {
+  id            Int                @id @default(autoincrement())
+  campaign_id   Int
+  creative_id   String             @db.VarChar(255)
+  creative_name String             @db.VarChar(255)
+  type          ads_creatives_type
+  status        String?            @db.VarChar(50)
+  content       String?            @db.Text
+  created_at    DateTime           @default(now()) @db.Timestamp(0)
+  updated_at    DateTime           @default(now()) @db.Timestamp(0)
+  ads_campaigns ads_campaigns      @relation(fields: [campaign_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "ads_creatives_ibfk_1")
+
+  @@unique([campaign_id, creative_id], map: "unique_creative_per_campaign")
+}
+
+model ads_insights {
+  id            Int           @id @default(autoincrement())
+  campaign_id   Int
+  date          DateTime      @db.Date
+  impressions   Int?          @default(0)
+  clicks        Int?          @default(0)
+  spend         Decimal?      @default(0.00) @db.Decimal(10, 2)
+  conversions   Int?          @default(0)
+  revenue       Decimal?      @default(0.00) @db.Decimal(10, 2)
+  created_at    DateTime      @default(now()) @db.Timestamp(0)
+  updated_at    DateTime      @default(now()) @db.Timestamp(0)
+  ads_campaigns ads_campaigns @relation(fields: [campaign_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "ads_insights_ibfk_1")
+
+  @@unique([campaign_id, date], map: "unique_insight_per_campaign_date")
+}
+
+model ads_platforms {
+  id            Int         @id @default(autoincrement())
+  platform_name String      @unique(map: "platform_name") @db.VarChar(50)
+  api_url       String      @db.VarChar(255)
+  auth_url      String      @db.VarChar(255)
+  token_url     String      @db.VarChar(255)
+  client_id     String      @db.VarChar(255)
+  client_secret String      @db.VarChar(255)
+  redirect_uri  String      @db.VarChar(255)
+  scopes        String      @db.Text
+  created_at    DateTime    @default(now()) @db.Timestamp(0)
+  updated_at    DateTime    @default(now()) @db.Timestamp(0)
+  analytics     analytics[]
+
+  @@index([platform_name], map: "idx_platform_name")
+}
+
+model ads_tokens {
+  id                 Int                  @id @default(autoincrement())
+  user_id            Int
+  platform           String               @db.VarChar(50)
+  access_token       String               @db.Text
+  refresh_token      String?              @db.Text
+  expiry_date        DateTime             @default(now()) @db.Timestamp(0)
+  token_type         String?              @db.VarChar(50)
+  scope              String?              @db.Text
+  last_refreshed     DateTime             @default(now()) @db.Timestamp(0)
+  created_at         DateTime             @default(now()) @db.Timestamp(0)
+  updated_at         DateTime             @default(now()) @db.Timestamp(0)
+  ads_accounts       ads_accounts[]
+  connected_accounts connected_accounts[]
+
+  @@unique([user_id, platform], map: "unique_user_platform")
+}
+
+model analytics {
+  id            Int           @id @default(autoincrement())
+  user_id       Int
+  platform      String        @db.VarChar(50)
+  metric        String        @db.VarChar(50)
+  value         Decimal       @db.Decimal(10, 2)
+  date          DateTime      @db.Date
+  created_at    DateTime      @default(now()) @db.Timestamp(0)
+  updated_at    DateTime      @default(now()) @db.Timestamp(0)
+  users         users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "analytics_ibfk_1")
+  ads_platforms ads_platforms @relation(fields: [platform], references: [platform_name], onDelete: Cascade, onUpdate: Restrict, map: "analytics_ibfk_2")
+
+  @@unique([user_id, platform, metric, date], map: "unique_analytics_per_user_platform_metric_date")
+  @@index([platform], map: "platform")
+}
+
+model audit_logs {
+  id            String   @id @db.VarChar(36)
+  team_id       String   @db.VarChar(36)
+  user_id       Int?
+  action        String   @db.VarChar(100)
+  resource      String   @db.VarChar(50)
+  resource_id   String?  @db.VarChar(100)
+  resource_name String?  @db.VarChar(200)
+  details       String?  @db.LongText
+  ip_address    String?  @db.VarChar(45)
+  user_agent    String?  @db.Text
+  created_at    DateTime @default(now()) @db.Timestamp(0)
+  teams         teams    @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "audit_logs_ibfk_1")
+  users         users?   @relation(fields: [user_id], references: [id], onUpdate: Restrict, map: "audit_logs_ibfk_2")
+
+  @@index([team_id, created_at], map: "idx_audit_team")
+  @@index([user_id], map: "user_id")
+}
+
+model connected_accounts {
+  id                  Int                                @id @default(autoincrement())
+  token_id            Int
+  account_id          String                             @db.VarChar(255)
+  account_name        String                             @db.VarChar(255)
+  platform            String                             @db.VarChar(50)
+  account_type        connected_accounts_account_type?   @default(business)
+  permissions         String?                            @db.LongText
+  account_owner_name  String?                            @db.VarChar(255)
+  account_owner_email String?                            @db.VarChar(255)
+  timezone            String?                            @default("UTC") @db.VarChar(50)
+  country_code        String?                            @db.VarChar(5)
+  currency            String?                            @db.VarChar(10)
+  billing_currency    String?                            @db.VarChar(10)
+  status              String?                            @db.VarChar(50)
+  is_active           Boolean?                           @default(true)
+  sync_enabled        Boolean?                           @default(true)
+  last_sync_at        DateTime                           @default(now()) @db.Timestamp(0)
+  sync_frequency      connected_accounts_sync_frequency? @default(daily)
+  metadata            String?                            @db.LongText
+  created_at          DateTime                           @default(now()) @db.Timestamp(0)
+  updated_at          DateTime                           @default(now()) @db.Timestamp(0)
+  ads_tokens          ads_tokens                         @relation(fields: [token_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "connected_accounts_ibfk_1")
+
+  @@unique([token_id, account_id], map: "unique_account_per_token")
+  @@index([last_sync_at], map: "idx_last_sync_at")
+  @@index([platform], map: "idx_platform")
+  @@index([sync_enabled], map: "idx_sync_enabled")
+}
+
+model content_media {
+  id            String        @id @db.VarChar(36)
+  post_id       String        @db.VarChar(36)
+  filename      String        @db.VarChar(255)
+  original_name String        @db.VarChar(255)
+  mime_type     String        @db.VarChar(100)
+  size          Int
+  url           String        @db.VarChar(500)
+  created_at    DateTime      @default(now()) @db.Timestamp(0)
+  content_posts content_posts @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "content_media_ibfk_1")
+
+  @@index([post_id], map: "post_id")
+}
+
+model content_posts {
+  id            String                @id @db.VarChar(36)
+  team_id       String                @db.VarChar(36)
+  author_id     Int
+  title         String                @db.VarChar(200)
+  content       String?               @db.Text
+  platforms     String?               @db.LongText
+  status        content_posts_status? @default(draft)
+  scheduled_for DateTime?             @db.Timestamp(0)
+  published_at  DateTime?             @db.Timestamp(0)
+  created_at    DateTime              @default(now()) @db.Timestamp(0)
+  updated_at    DateTime              @default(now()) @db.Timestamp(0)
+  content_media content_media[]
+  teams         teams                 @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "content_posts_ibfk_1")
+  users         users                 @relation(fields: [author_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "content_posts_ibfk_2")
+
+  @@index([author_id], map: "author_id")
+  @@index([scheduled_for], map: "idx_content_scheduled")
+  @@index([team_id, status], map: "idx_content_team_status")
+}
+
+model inbox_messages {
+  id            String                 @id @db.VarChar(36)
+  team_id       String                 @db.VarChar(36)
+  platform      String                 @db.VarChar(50)
+  external_id   String?                @db.VarChar(100)
+  sender_name   String?                @db.VarChar(100)
+  sender_avatar String?                @db.VarChar(255)
+  message       String                 @db.Text
+  status        inbox_messages_status? @default(unread)
+  received_at   DateTime               @default(now()) @db.Timestamp(0)
+  created_at    DateTime               @default(now()) @db.Timestamp(0)
+  teams         teams                  @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "inbox_messages_ibfk_1")
+
+  @@index([team_id, status], map: "idx_inbox_team")
+}
+
+model knex_migrations {
+  id             Int      @id @default(autoincrement()) @db.UnsignedInt
+  name           String?  @db.VarChar(255)
+  batch          Int?
+  migration_time DateTime @default(now()) @db.Timestamp(0)
+}
+
+model knex_migrations_lock {
+  index     Int  @id @default(autoincrement()) @db.UnsignedInt
+  is_locked Int?
+}
+
+model notifications {
+  id         String    @id @db.VarChar(36)
+  user_id    Int
+  team_id    String?   @db.VarChar(36)
+  type       String    @db.VarChar(50)
+  title      String    @db.VarChar(150)
+  message    String?   @db.Text
+  read_at    DateTime? @db.Timestamp(0)
+  action_url String?   @db.VarChar(255)
+  created_at DateTime  @default(now()) @db.Timestamp(0)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "notifications_ibfk_1")
+  teams      teams?    @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "notifications_ibfk_2")
+
+  @@index([user_id, read_at], map: "idx_user_unread")
+  @@index([team_id], map: "team_id")
+}
+
+model refresh_tokens {
+  id         Int                  @id @default(autoincrement())
+  user_id    Int
+  token      String               @db.VarChar(500)
+  type       refresh_tokens_type? @default(access)
+  expires_at DateTime             @default(now()) @db.Timestamp(0)
+  created_at DateTime             @default(now()) @db.Timestamp(0)
+  users      users                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "refresh_tokens_ibfk_1")
+
+  @@index([token(length: 255)], map: "idx_token")
+  @@index([user_id], map: "idx_user_id")
+}
+
+model selected_properties {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  property_id String   @db.VarChar(50)
+  created_at  DateTime @default(now()) @db.Timestamp(0)
+  updated_at  DateTime @default(now()) @db.Timestamp(0)
+  users       users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "selected_properties_ibfk_1")
+
+  @@unique([user_id, property_id], map: "unique_selected_properties_per_user_platform_property")
+}
+
+model subscriptions {
+  id                     String                          @id @db.VarChar(36)
+  team_id                String                          @unique(map: "team_id") @db.VarChar(36)
+  plan_id                String                          @default("free") @db.VarChar(50)
+  status                 subscriptions_status?           @default(trialing)
+  stripe_customer_id     String?                         @db.VarChar(100)
+  stripe_subscription_id String?                         @db.VarChar(100)
+  billing_interval       subscriptions_billing_interval?
+  trial_ends_at          DateTime?                       @db.Timestamp(0)
+  current_period_end     DateTime?                       @db.Timestamp(0)
+  cancel_at_period_end   Boolean?                        @default(false)
+  created_at             DateTime                        @default(now()) @db.Timestamp(0)
+  updated_at             DateTime                        @default(now()) @db.Timestamp(0)
+  teams                  teams                           @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "subscriptions_ibfk_1")
+}
+
+model team_members {
+  id         String             @id @db.VarChar(36)
+  team_id    String             @db.VarChar(36)
+  user_id    Int
+  role       team_members_role? @default(viewer)
+  invited_at DateTime           @default(now()) @db.Timestamp(0)
+  joined_at  DateTime?          @db.Timestamp(0)
+  teams      teams              @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "team_members_ibfk_1")
+  users      users              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "team_members_ibfk_2")
+
+  @@unique([team_id, user_id], map: "unique_team_user")
+  @@index([team_id], map: "idx_team_id")
+  @@index([user_id], map: "idx_user_id")
+}
+
+model team_settings {
+  team_id                  String   @id @db.VarChar(36)
+  timezone                 String?  @default("UTC") @db.VarChar(50)
+  notification_preferences String?  @db.LongText
+  auto_publish             Boolean? @default(false)
+  created_at               DateTime @default(now()) @db.Timestamp(0)
+  updated_at               DateTime @default(now()) @db.Timestamp(0)
+  teams                    teams    @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "team_settings_ibfk_1")
+}
+
+model teams {
+  id               String            @id @db.VarChar(36)
+  name             String            @db.VarChar(100)
+  slug             String            @unique(map: "slug") @db.VarChar(100)
+  owner_id         Int?
+  plan             String?           @default("free") @db.VarChar(20)
+  settings         String?           @db.LongText
+  created_at       DateTime          @default(now()) @db.Timestamp(0)
+  audit_logs       audit_logs[]
+  brand_guidelines brand_guidelines?
+  content_posts    content_posts[]
+  inbox_messages   inbox_messages[]
+  notifications    notifications[]
+  subscriptions    subscriptions?
+  team_members     team_members[]
+  team_settings    team_settings?
+  users            users?            @relation(fields: [owner_id], references: [id], onUpdate: Restrict, map: "teams_ibfk_1")
+
+  @@index([owner_id], map: "idx_owner_id")
+}
+
+model users {
+  id                  Int                   @id @default(autoincrement())
+  username            String                @unique(map: "username") @db.VarChar(50)
+  email               String                @unique(map: "email") @db.VarChar(100)
+  password            String                @db.VarChar(255)
+  role                users_role?           @default(user)
+  is_active           Boolean?              @default(true)
+  created_at          DateTime              @default(now()) @db.Timestamp(0)
+  updated_at          DateTime              @default(now()) @db.Timestamp(0)
+  analytics           analytics[]
+  audit_logs          audit_logs[]
+  content_posts       content_posts[]
+  notifications       notifications[]
+  refresh_tokens      refresh_tokens[]
+  selected_properties selected_properties[]
+  team_members        team_members[]
+  teams               teams[]
+
+  @@index([email], map: "idx_email")
+  @@index([role], map: "idx_role")
+  @@index([username], map: "idx_username")
+}
+
+model brand_guidelines {
+  id          String   @id @db.VarChar(36)
+  team_id     String   @unique(map: "brand_guidelines_team_id_unique") @db.VarChar(36)
+  brand_name  String   @db.VarChar(100)
+  brand_voice String   @db.Text
+  faq_rules   String?  @db.Text
+  created_at  DateTime @default(now()) @db.Timestamp(0)
+  updated_at  DateTime @default(now()) @db.Timestamp(0)
+  teams       teams    @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "brand_guidelines_team_id_foreign")
+}
+
+enum refresh_tokens_type {
+  access
+  refresh
+}
+
+enum subscriptions_status {
+  trialing
+  active
+  past_due
+  canceled
+  unpaid
+}
+
+enum team_members_role {
+  admin
+  manager
+  editor
+  viewer
+}
+
+enum ads_creatives_type {
+  image
+  video
+  carousel
+}
+
+enum users_role {
+  admin
+  user
+  moderator
+}
+
+enum connected_accounts_account_type {
+  personal
+  business
+  agency
+}
+
+enum content_posts_status {
+  draft
+  scheduled
+  published
+  failed
+}
+
+enum subscriptions_billing_interval {
+  monthly
+  yearly
+}
+
+enum inbox_messages_status {
+  unread
+  read
+  replied
+  archived
+}
+
+enum connected_accounts_sync_frequency {
+  hourly
+  daily
+  weekly
+}

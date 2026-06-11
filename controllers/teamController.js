@@ -199,3 +199,22 @@ exports.removeMember = async (req, res) => {
         res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: 'Failed to remove member' } });
     }
 };
+
+exports.getTeamMembers = async (req, res) => {
+    try {
+        const { teamId } = req.params;
+        const membership = await TeamMember.getMembership(teamId, req.user.id);
+        if (!membership) {
+            return res.status(403).json({ success: false, error: { code: 'FORBIDDEN', message: 'Insufficient permissions' } });
+        }
+
+        const members = await TeamMember.getTeamMembers(teamId);
+        res.status(200).json({
+            success: true,
+            data: members
+        });
+    } catch (error) {
+        console.error('Error fetching team members:', error);
+        res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch team members' } });
+    }
+};

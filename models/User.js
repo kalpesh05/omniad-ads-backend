@@ -1,4 +1,4 @@
-const { pool } = require('../config/database');
+const prisma = require('../config/prisma');
 const bcrypt = require('bcryptjs');
 
 class User {
@@ -21,70 +21,84 @@ class User {
     const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    const [result] = await pool.execute(
-      'INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)',
-      [username, email, hashedPassword, role]
-    );
+    const user = await prisma.users.create({
+      data: {
+        username,
+        email,
+        password: hashedPassword,
+        role: role
+      }
+    });
 
-    return await User.findById(result.insertId);
+    return new User(user);
   }
 
   // Find user by ID
   static async findById(id) {
-    const [rows] = await pool.execute(
-      'SELECT * FROM users WHERE id = ? AND is_active = true',
-      [id]
-    );
+    const user = await prisma.users.findFirst({
+      where: {
+        id: parseInt(id),
+        is_active: true
+      }
+    });
 
-    return rows.length > 0 ? new User(rows[0]) : null;
+    return user ? new User(user) : null;
   }
 
   // Find user by email
   static async findByEmail(email) {
-    const [rows] = await pool.execute(
-      'SELECT * FROM users WHERE email = ? AND is_active = true',
-      [email]
-    );
+    const user = await prisma.users.findFirst({
+      where: {
+        email,
+        is_active: true
+      }
+    });
 
-    return rows.length > 0 ? new User(rows[0]) : null;
+    return user ? new User(user) : null;
   }
 
   // Find user by username
   static async findByUsername(username) {
-    const [rows] = await pool.execute(
-      'SELECT * FROM users WHERE username = ? AND is_active = true',
-      [username]
-    );
+    const user = await prisma.users.findFirst({
+      where: {
+        username,
+        is_active: true
+      }
+    });
 
-    return rows.length > 0 ? new User(rows[0]) : null;
+    return user ? new User(user) : null;
   }
 
   // Check if email exists
   static async emailExists(email, excludeId = null) {
-    let query = 'SELECT id FROM users WHERE email = ?';
-    let params = [email];
+    const where = {
+      email
+    };
 
     if (excludeId) {
-      query += ' AND id != ?';
-      params.push(excludeId);
+      where.id = {
+        not: parseInt(excludeId)
+      };
     }
 
-    const [rows] = await pool.execute(query, params);
-    return rows.length > 0;
+    const count = await prisma.users.count({ where });
+    return count > 0;
   }
 
   // Check if username exists
   static async usernameExists(username, excludeId = null) {
-    let query = 'SELECT id FROM users WHERE username = ?';
-    let params = [username];
+    const where = {
+      username
+    };
 
     if (excludeId) {
-      query += ' AND id != ?';
-      params.push(excludeId);
+      where.id = {
+        not: parseInt(excludeId)
+      };
     }
 
-    const [rows] = await pool.execute(query, params);
-    return rows.length > 0;
+    const count = await prisma.users.count({ where });
+    return count > 0;
   }
 
   // Verify password
@@ -95,28 +109,26 @@ class User {
   // Update user
   async update(updateData) {
     const allowedFields = ['username', 'email', 'role', 'is_active'];
-    const updates = [];
-    const values = [];
+    const data = {};
 
     Object.keys(updateData).forEach(key => {
       if (allowedFields.includes(key) && updateData[key] !== undefined) {
-        updates.push(`${key} = ?`);
-        values.push(updateData[key]);
+        data[key] = updateData[key];
       }
     });
 
-    if (updates.length === 0) {
+    if (Object.keys(data).length === 0) {
       return this;
     }
 
-    values.push(this.id);
+    const updatedUser = await prisma.users.update({
+      where: {
+        id: this.id
+      },
+      data
+    });
 
-    await pool.execute(
-      `UPDATE users SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-      values
-    );
-
-    return await User.findById(this.id);
+    return new User(updatedUser);
   }
 
   // Get user data without password
@@ -128,14 +140,17 @@ class User {
   // Get all users (admin only)
   static async findAll(page = 1, limit = 10) {
     const offset = (page - 1) * limit;
-    
-    const [rows] = await pool.execute(
-      'SELECT id, username, email, role, is_active, created_at, updated_at FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?',
-      [limit, offset]
-    );
 
-    const [countResult] = await pool.execute('SELECT COUNT(*) as total FROM users');
-    const total = countResult[0].total;
+    const [total, rows] = await Promise.all([
+      prisma.users.count(),
+      prisma.users.findMany({
+        orderBy: {
+          created_at: 'desc'
+        },
+        take: parseInt(limit),
+        skip: parseInt(offset)
+      })
+    ]);
 
     return {
       users: rows.map(row => new User(row)),
@@ -150,10 +165,14 @@ class User {
 
   // Soft delete user
   async delete() {
-    await pool.execute(
-      'UPDATE users SET is_active = false, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      [this.id]
-    );
+    await prisma.users.update({
+      where: {
+        id: this.id
+      },
+      data: {
+        is_active: false
+      }
+    });
   }
 }
 

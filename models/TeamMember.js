@@ -1,36 +1,49 @@
-const { pool } = require('../config/database');
+const prisma = require('../config/prisma');
 const { v4: uuidv4 } = require('uuid');
 
 class TeamMember {
     /**
-     * Run raw queries safely
-     */
-    static async query(sql, params) {
-        const [rows, fields] = await pool.execute(sql, params);
-        return rows;
-    }
-
-    /**
      * Get all members of a team
      */
     static async getTeamMembers(teamId) {
-        const sql = `
-      SELECT tm.id as membership_id, tm.role, tm.invited_at, tm.joined_at, 
-             u.id, u.email, u.name, u.username, u.avatar 
-      FROM team_members tm
-      JOIN users u ON tm.user_id = u.id
-      WHERE tm.team_id = ?
-    `;
-        return this.query(sql, [teamId]);
+        const teamMembers = await prisma.team_members.findMany({
+            where: {
+                team_id: teamId
+            },
+            include: {
+                users: {
+                    select: {
+                        id: true,
+                        email: true,
+                        username: true
+                    }
+                }
+            }
+        });
+
+        return teamMembers.map(tm => ({
+            membership_id: tm.id,
+            role: tm.role,
+            invited_at: tm.invited_at,
+            joined_at: tm.joined_at,
+            id: tm.users.id,
+            email: tm.users.email,
+            name: tm.users.username,
+            username: tm.users.username,
+            avatar: null
+        }));
     }
 
     /**
      * Check a specific user's membership in a team
      */
     static async getMembership(teamId, userId) {
-        const sql = 'SELECT * FROM team_members WHERE team_id = ? AND user_id = ?';
-        const rows = await this.query(sql, [teamId, userId]);
-        return rows[0];
+        return await prisma.team_members.findFirst({
+            where: {
+                team_id: teamId,
+                user_id: parseInt(userId)
+            }
+        });
     }
 
     /**
@@ -40,21 +53,39 @@ class TeamMember {
         const id = uuidv4();
         const joinedAt = new Date(); // Automatically assumed joined for simplicity in this flow
 
-        const sql = `
-      INSERT INTO team_members (id, team_id, user_id, role, invited_at, joined_at) 
-      VALUES (?, ?, ?, ?, ?, ?)
-    `;
+        const tm = await prisma.team_members.create({
+            data: {
+                id,
+                team_id: teamId,
+                user_id: parseInt(userId),
+                role,
+                invited_at: joinedAt,
+                joined_at: joinedAt
+            }
+        });
 
-        await this.query(sql, [id, teamId, userId, role, joinedAt, joinedAt]);
-        return { id, teamId, userId, role, joinedAt };
+        return {
+            id: tm.id,
+            teamId: tm.team_id,
+            userId: tm.user_id,
+            role: tm.role,
+            joinedAt: tm.joined_at
+        };
     }
 
     /**
      * Update a member's role
      */
     static async updateRole(teamId, userId, newRole) {
-        const sql = 'UPDATE team_members SET role = ? WHERE team_id = ? AND user_id = ?';
-        await this.query(sql, [newRole, teamId, userId]);
+        await prisma.team_members.updateMany({
+            where: {
+                team_id: teamId,
+                user_id: parseInt(userId)
+            },
+            data: {
+                role: newRole
+            }
+        });
         return true;
     }
 
@@ -62,8 +93,12 @@ class TeamMember {
      * Remove a member from a team
      */
     static async removeMember(teamId, userId) {
-        const sql = 'DELETE FROM team_members WHERE team_id = ? AND user_id = ?';
-        await this.query(sql, [teamId, userId]);
+        await prisma.team_members.deleteMany({
+            where: {
+                team_id: teamId,
+                user_id: parseInt(userId)
+            }
+        });
         return true;
     }
 }

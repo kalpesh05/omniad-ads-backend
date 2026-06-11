@@ -131,6 +131,21 @@ console.log('Saved Token:', savedToken);
             errorResponse(res, 'Failed to check user accounts');
         }
     }
+
+    // Disconnect a platform (delete tokens and cascade accounts)
+    static async disconnectPlatform(req, res) {
+        try {
+            const userId = req.user.id;
+            const platform = req.params.platform;
+
+            await AdsToken.deleteByUserAndPlatform(userId, platform);
+
+            successResponse(res, null, `${platform} disconnected successfully`);
+        } catch (error) {
+            console.error('Disconnect Platform Error:', error);
+            errorResponse(res, 'Failed to disconnect platform');
+        }
+    }
 }
 
 module.exports = AdsAuthController;

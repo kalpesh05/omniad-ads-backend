@@ -1,6 +1,96 @@
 const express = require('express');
-const AdsController = require('../controllers/adsController');
 const { authenticateToken } = require('../middleware/auth');
+
+const CampaignController = require('../controllers/ads/campaignController');
+const FacebookController = require('../controllers/ads/facebookController');
+const YoutubeController = require('../controllers/ads/youtubeController');
+const AnalyticsController = require('../controllers/ads/analyticsController');
+const ReportController = require('../controllers/ads/reportController');
+
+// Map AdsController references in this file directly to modular sub-controllers
+const AdsController = {
+  // Campaign Controller
+  getAllCampaignsGeneric: CampaignController.getAllCampaignsGeneric,
+  createCampaignGeneric: CampaignController.createCampaignGeneric,
+  getCampaignGeneric: CampaignController.getCampaignGeneric,
+  updateCampaignGeneric: CampaignController.updateCampaignGeneric,
+  deleteCampaignGeneric: CampaignController.deleteCampaignGeneric,
+  updateCampaignStatusGeneric: CampaignController.updateCampaignStatusGeneric,
+  syncCampaignGeneric: CampaignController.syncCampaignGeneric,
+  getCampaigns: CampaignController.getCampaigns,
+  createCampaign: CampaignController.createCampaign,
+  updateCampaign: CampaignController.updateCampaign,
+  bulkUpdateCampaignStatus: CampaignController.bulkUpdateCampaignStatus,
+
+  // Facebook Controller
+  getBusinessAccounts: FacebookController.getBusinessAccounts,
+  getInstagramAccounts: FacebookController.getInstagramAccounts,
+  getAdCreatives: FacebookController.getAdCreatives,
+  createAdCreative: FacebookController.createAdCreative,
+  uploadImage: FacebookController.uploadImage,
+  getTargetingOptions: FacebookController.getTargetingOptions,
+  getDeliveryEstimate: FacebookController.getDeliveryEstimate,
+
+  // YouTube Controller
+  getChannels: YoutubeController.getChannels,
+  getChannelVideos: YoutubeController.getChannelVideos,
+  createBumperAd: YoutubeController.createBumperAd,
+  addChannelTargeting: YoutubeController.addChannelTargeting,
+  uploadVideoAsset: YoutubeController.uploadVideoAsset,
+  getVideoPerformanceReport: YoutubeController.getVideoPerformanceReport,
+  getChannelAnalytics: YoutubeController.getChannelAnalytics,
+
+  // Report Controller
+  generateReport: ReportController.generateReport,
+  getReports: ReportController.getReports,
+  downloadReport: ReportController.downloadReport,
+  exportAnalyticsGeneric: ReportController.exportAnalyticsGeneric,
+
+  // Analytics Controller
+  getAnalyticsOverviewGeneric: AnalyticsController.getAnalyticsOverviewGeneric,
+  getDashboardOverviewGeneric: AnalyticsController.getDashboardOverviewGeneric,
+  getConnectedAccounts: AnalyticsController.getConnectedAccounts,
+  getAdAccounts: AnalyticsController.getAdAccounts,
+  getAdSets: AnalyticsController.getAdSets,
+  createAdSet: AnalyticsController.createAdSet,
+  getAds: AnalyticsController.getAds,
+  createAd: AnalyticsController.createAd,
+  getAnalyticsProperties: AnalyticsController.getAnalyticsProperties,
+  getAnalyticsMetrics: AnalyticsController.getAnalyticsMetrics,
+  getAnalyticsMonthlyChart: AnalyticsController.getAnalyticsMonthlyChart,
+  getAnalyticsDeviceChart: AnalyticsController.getAnalyticsDeviceChart,
+  getAnalyticsReport: AnalyticsController.getAnalyticsReport,
+  getAnalyticsTopBrowsers: AnalyticsController.getAnalyticsTopBrowsers,
+  getAnalyticsTopPages: AnalyticsController.getAnalyticsTopPages,
+  getAnalyticsRevenueTrends: AnalyticsController.getAnalyticsRevenueTrends,
+  getInsights: AnalyticsController.getInsights,
+  getSupportedPlatforms: AnalyticsController.getSupportedPlatforms,
+  checkPlatformHealth: AnalyticsController.checkPlatformHealth,
+  getConversionFunnel: AnalyticsController.getConversionFunnel,
+  getConversionsBySource: AnalyticsController.getConversionsBySource,
+  getConversionGoals: AnalyticsController.getConversionGoals,
+  getRevenueByChannel: AnalyticsController.getRevenueByChannel,
+  getRevenueByCampaigns: AnalyticsController.getRevenueByCampaigns,
+  getLifetimeValue: AnalyticsController.getLifetimeValue,
+  getCustomEvents: AnalyticsController.getCustomEvents,
+  createCustomEvent: AnalyticsController.createCustomEvent,
+  getCustomKPIs: AnalyticsController.getCustomKPIs,
+  getSegments: AnalyticsController.getSegments,
+  createSegment: AnalyticsController.createSegment,
+  getTrafficSources: AnalyticsController.getTrafficSources,
+  getLandingPages: AnalyticsController.getLandingPages,
+  getExitPages: AnalyticsController.getExitPages,
+  getEngagementFrequency: AnalyticsController.getEngagementFrequency,
+  getEngagementRecency: AnalyticsController.getEngagementRecency,
+  getScrollDepth: AnalyticsController.getScrollDepth,
+  aiChat: AnalyticsController.aiChat,
+  aiInsights: AnalyticsController.aiInsights,
+  aiRecommendations: AnalyticsController.aiRecommendations,
+  getAnalyticsPerformanceGeneric: AnalyticsController.getAnalyticsPerformanceGeneric,
+  getAnalyticsPlatformsGeneric: AnalyticsController.getAnalyticsPlatformsGeneric,
+  getAnalyticsCompareGeneric: AnalyticsController.getAnalyticsCompareGeneric,
+  getAnalyticsGA4Generic: AnalyticsController.getAnalyticsGA4Generic,
+};
 const {
   validateCreateCampaign,
   validateUpdateCampaign,

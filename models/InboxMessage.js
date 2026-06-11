@@ -1,15 +1,6 @@
-const { pool } = require('../config/database');
-const { v4: uuidv4 } = require('uuid');
+const prisma = require('../config/prisma');
 
 class InboxMessage {
-    /**
-     * Run raw queries safely
-     */
-    static async query(sql, params) {
-        const [rows, fields] = await pool.execute(sql, params);
-        return rows;
-    }
-
     /**
      * Fetch inbox messages for a team
      */
@@ -23,33 +14,29 @@ class InboxMessage {
 
         const offset = (page - 1) * limit;
 
-        let queryArgs = [teamId];
-        let whereClause = 'WHERE team_id = ?';
+        const where = {
+            team_id: teamId
+        };
 
         if (platform) {
-            whereClause += ' AND platform = ?';
-            queryArgs.push(platform);
+            where.platform = platform;
         }
 
         if (status) {
-            whereClause += ' AND status = ?';
-            queryArgs.push(status);
+            where.status = status;
         }
 
-        const countSql = `SELECT COUNT(*) as total FROM inbox_messages ${whereClause}`;
-        const [countRows] = await pool.execute(countSql, queryArgs);
-        const total = countRows[0].total;
-
-        queryArgs.push(parseInt(limit), parseInt(offset));
-
-        const sql = `
-      SELECT * FROM inbox_messages 
-      ${whereClause}
-      ORDER BY received_at DESC
-      LIMIT ? OFFSET ?
-    `;
-
-        const messages = await this.query(sql, queryArgs);
+        const [total, messages] = await Promise.all([
+            prisma.inbox_messages.count({ where }),
+            prisma.inbox_messages.findMany({
+                where,
+                orderBy: {
+                    received_at: 'desc'
+                },
+                take: parseInt(limit),
+                skip: parseInt(offset)
+            })
+        ]);
 
         return {
             data: messages,
@@ -65,8 +52,15 @@ class InboxMessage {
      * Change status of a message (e.g., mark read, replied to, etc)
      */
     static async updateStatus(id, teamId, status) {
-        const sql = 'UPDATE inbox_messages SET status = ? WHERE id = ? AND team_id = ?';
-        await this.query(sql, [status, id, teamId]);
+        await prisma.inbox_messages.updateMany({
+            where: {
+                id,
+                team_id: teamId
+            },
+            data: {
+                status
+            }
+        });
         return true;
     }
 
@@ -74,9 +68,33 @@ class InboxMessage {
      * Fetch specific message
      */
     static async findById(id, teamId) {
-        const rows = await this.query('SELECT * FROM inbox_messages WHERE id = ? AND team_id = ?', [id, teamId]);
-        return rows[0];
+        return await prisma.inbox_messages.findFirst({
+            where: {
+                id,
+                team_id: teamId
+            }
+        });
+    }
+
+    /**
+     * Create a new message
+     */
+    static async create(data) {
+        return await prisma.inbox_messages.create({
+            data: {
+                id: data.id || require('uuid').v4(),
+                team_id: data.team_id,
+                platform: data.platform,
+                external_id: data.external_id || `ext_${data.platform}_${Date.now()}`,
+                sender_name: data.sender_name,
+                sender_avatar: data.sender_avatar || (data.sender_name ? data.sender_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U'),
+                message: data.message,
+                status: data.status || 'unread',
+                received_at: data.received_at || new Date()
+            }
+        });
     }
 }
 
 module.exports = InboxMessage;
+
