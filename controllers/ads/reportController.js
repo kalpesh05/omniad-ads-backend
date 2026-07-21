@@ -39,11 +39,13 @@ class ReportController {
 
     static async getReports(req, res) {
         try {
-            const { status, type } = req.query;
+            const { status, type, teamId } = req.query;
             const userId = req.user.id;
 
+            if (!teamId) return errorResponse(res, 'teamId is required', 400);
+
             const reportsService = new ReportsService();
-            const result = await reportsService.getReports(userId, { status, type });
+            const result = await reportsService.getReports(userId, teamId, { status, type });
 
             if (!result.success) {
                 return errorResponse(res, result.error);
@@ -59,10 +61,13 @@ class ReportController {
     static async downloadReport(req, res) {
         try {
             const { id } = req.params;
+            const { teamId } = req.query;
             const userId = req.user.id;
 
+            if (!teamId) return errorResponse(res, 'teamId is required', 400);
+
             const reportsService = new ReportsService();
-            const result = await reportsService.downloadReport(userId, id);
+            const result = await reportsService.downloadReport(userId, id, teamId);
 
             if (!result.success) {
                 return errorResponse(res, result.error);

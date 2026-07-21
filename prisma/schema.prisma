@@ -335,6 +335,8 @@ model teams {
   team_members     team_members[]
   team_settings    team_settings?
   users            users?            @relation(fields: [owner_id], references: [id], onUpdate: Restrict, map: "teams_ibfk_1")
+  clientReports    client_reports[]
+  customDomains    custom_domains[]
 
   @@index([owner_id], map: "idx_owner_id")
 }
@@ -356,6 +358,7 @@ model users {
   selected_properties selected_properties[]
   team_members        team_members[]
   teams               teams[]
+  agent_playbooks     agent_playbooks[]
 
   @@index([email], map: "idx_email")
   @@index([role], map: "idx_role")
@@ -434,4 +437,42 @@ enum connected_accounts_sync_frequency {
   hourly
   daily
   weekly
+}
+
+model client_reports {
+  id          String   @id @default(uuid()) @db.VarChar(36)
+  team_id     String   @db.VarChar(36)
+  report_name String   @db.VarChar(255)
+  pdf_url     String?  @db.VarChar(500)
+  date_range  String?  @db.VarChar(100)
+  status      String   @default("pending") @db.VarChar(50)
+  created_at  DateTime @default(now()) @db.Timestamp(0)
+  teams       teams    @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@index([team_id])
+}
+
+model custom_domains {
+  id         String   @id @default(uuid()) @db.VarChar(36)
+  team_id    String   @db.VarChar(36)
+  domain     String   @unique @db.VarChar(255)
+  status     String   @default("pending") @db.VarChar(50)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  teams      teams    @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@index([team_id])
+}
+
+model agent_playbooks {
+  id                 String   @id @default(uuid()) @db.VarChar(36)
+  name               String   @db.VarChar(255)
+  description        String   @db.Text
+  trigger_conditions String   @db.LongText
+  action_steps       String   @db.LongText
+  is_public          Boolean  @default(false)
+  created_by         Int?
+  created_at         DateTime @default(now()) @db.Timestamp(0)
+  users              users?   @relation(fields: [created_by], references: [id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@index([created_by])
 }
