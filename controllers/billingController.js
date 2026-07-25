@@ -211,3 +211,86 @@ exports.handleWebhook = async (req, res) => {
         res.status(500).json({ error: 'Webhook processing failed' });
     }
 };
+
+const prisma = require('../config/prisma');
+const { successResponse, errorResponse } = require('../utils/response');
+
+exports.getClientInvoices = async (req, res) => {
+    try {
+        const teamId = req.query.teamId;
+        if (!teamId) return errorResponse(res, 'teamId required', 400);
+
+        const invoices = await prisma.client_invoices.findMany({
+            where: { team_id: teamId },
+            orderBy: { created_at: 'desc' }
+        });
+
+        successResponse(res, invoices, 'Client invoices retrieved successfully');
+    } catch (error) {
+        console.error('Error fetching client invoices:', error);
+        errorResponse(res, 'Failed to fetch client invoices');
+    }
+};
+
+exports.generateClientInvoice = async (req, res) => {
+    try {
+        const { teamId, clientEmail, amount } = req.body;
+        if (!teamId || !clientEmail || !amount) {
+            return errorResponse(res, 'teamId, clientEmail, and amount required', 400);
+        }
+
+        const settings = await prisma.team_settings.findUnique({
+            where: { team_id: teamId }
+        });
+
+        if (!settings || !settings.stripe_api_key) {
+            return errorResponse(res, 'Agency Stripe API keys not configured.', 400);
+        }
+
+        // Initialize Stripe with Agency's key (Option B: BYOS)
+        const agencyStripe = require('stripe')(settings.stripe_api_key);
+
+        // 1. Find or create customer on Agency's Stripe
+        let customers = await agencyStripe.customers.list({ email: clientEmail, limit: 1 });
+        let customer;
+        if (customers.data.length === 0) {
+            customer = await agencyStripe.customers.create({ email: clientEmail });
+        } else {
+            customer = customers.data[0];
+        }
+
+        // 2. Create an Invoice Item for the Ad Spend + Management Fee
+        await agencyStripe.invoiceItems.create({
+            customer: customer.id,
+            amount: Math.round(amount * 100), // Stripe uses cents
+            currency: 'usd',
+            description: 'AI Autonomous Ad Management & Spend (OmniAds)',
+        });
+
+        // 3. Generate the Invoice
+        const invoice = await agencyStripe.invoices.create({
+            customer: customer.id,
+            auto_advance: true,
+            collection_method: 'send_invoice',
+            days_until_due: 7,
+        });
+
+        // 4. Save to our database for the ClientBilling.tsx dashboard
+        const clientInvoice = await prisma.client_invoices.create({
+            data: {
+                team_id: teamId,
+                client_email: clientEmail,
+                amount: amount,
+                status: invoice.status || 'open',
+                stripe_inv_id: invoice.id,
+                period_start: new Date(),
+                period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+            }
+        });
+
+        successResponse(res, clientInvoice, 'Invoice generated successfully via Agency Stripe account');
+    } catch (error) {
+        console.error('Error generating client invoice:', error);
+        errorResponse(res, 'Failed to generate client invoice. Verify Stripe API keys.');
+    }
+};

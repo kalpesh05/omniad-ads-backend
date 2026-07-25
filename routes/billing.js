@@ -62,4 +62,7 @@ router.get('/plan', billingController.getPlan);
  */
 router.post('/checkout', billingController.createCheckout);
 
+router.get('/client-invoices', billingController.getClientInvoices);
+router.post('/client-invoices', billingController.generateClientInvoice);
+
 module.exports = router;

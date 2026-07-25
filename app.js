@@ -79,6 +79,11 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/domains', require('./routes/domains'));
 app.use('/api/integrations', require('./routes/integrations'));
+app.use('/api/agent-personas', require('./routes/agentPersonas'));
+app.use('/api/ai-creative', require('./routes/aiCreative'));
+app.use('/api/client-portal', require('./routes/clientPortal'));
+app.use('/api/spy', require('./routes/spy'));
+app.use('/api/media-briefing', require('./routes/mediaBriefing'));
 app.use('/api/teams', teamRoutes);
 const path = require('path');
 
