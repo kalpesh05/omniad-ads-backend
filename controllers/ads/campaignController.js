@@ -15,6 +15,8 @@ const {
 } = require('../../utils/response');
 const Subscription = require('../../models/Subscription');
 const { getPlanByPriceId } = require('../../config/plans');
+const prisma = require('../../config/prisma');
+const AdPublisherService = require('../../services/adPublisherService');
 
 
 class CampaignController {
@@ -61,8 +63,26 @@ class CampaignController {
             }
 
             const validatedPlatform = AdsManagerFactory.validatePlatform(platform);
-            const adsManager = AdsManagerFactory.createManager(validatedPlatform);
+            
+            // Execute the campaign to the real ad networks via Phase 9 Publisher Service
+            try {
+                if (platform === 'meta' || platform === 'facebook') {
+                    await AdPublisherService.publishToFacebook(campaignData, {
+                        accessToken: process.env.FACEBOOK_APP_SECRET,
+                        adAccountId: accountId
+                    });
+                } else if (platform === 'google') {
+                    await AdPublisherService.publishToGoogle(campaignData, {
+                        clientId: process.env.GOOGLE_CLIENT_ID,
+                        developerToken: process.env.GOOGLE_ADS_DEVELOPER_TOKEN,
+                        customerId: accountId
+                    });
+                }
+            } catch (networkError) {
+                return errorResponse(res, `Failed to publish to ad network: ${networkError.message}`);
+            }
 
+            const adsManager = AdsManagerFactory.createManager(validatedPlatform);
             const result = await adsManager.createCampaign(userId, accountId, campaignData);
 
             if (!result.success) {
