@@ -40,4 +40,9 @@ router.patch('/:id/status', CampaignController.updateCampaignStatusGeneric);
 
 router.post('/:id/sync', CampaignController.syncCampaignGeneric);
 
+router.post('/:id/request-approval', CampaignController.requestClientApproval);
+
+// This would typically be a public route with a token validation, but we keep it here for demo
+router.post('/:id/client-approve', CampaignController.clientApproveCampaign);
+
 module.exports = router;

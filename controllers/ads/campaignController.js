@@ -209,10 +209,99 @@ class CampaignController {
                 UPDATE ads_campaigns SET status = ?, updated_at = NOW() WHERE id = ?
             `, [status, id]);
 
-            successResponse(res, { id, status }, 'Campaign status updated');
+            successResponse(res, null, 'Campaign status updated successfully');
         } catch (error) {
             console.error('Update Campaign Status Error:', error);
             errorResponse(res, 'Failed to update campaign status');
+        }
+    }
+
+    static async requestClientApproval(req, res) {
+        try {
+            const { id } = req.params;
+            const userId = req.user.id;
+
+            // Verify ownership
+            const [owner] = await require('../../config/database').pool.execute(`
+                SELECT c.id FROM ads_campaigns c
+                JOIN connected_accounts ca ON c.account_id = ca.id
+                JOIN ads_tokens at ON ca.token_id = at.id
+                WHERE c.id = ? AND at.user_id = ?
+            `, [id, userId]);
+
+            if (owner.length === 0) return errorResponse(res, 'Campaign not found or unauthorized', 404);
+
+            await require('../../config/database').pool.execute(
+                'UPDATE ads_campaigns SET status = ? WHERE id = ?',
+                ['PENDING_CLIENT_APPROVAL', id]
+            );
+
+            // Create Audit Log
+            const AuditLog = require('../../models/AuditLog');
+            await AuditLog.create({
+                team_id: req.user.team_id || '1',
+                user_id: userId,
+                action: 'REQUEST_APPROVAL',
+                resource: 'ads_campaigns',
+                resource_id: id,
+                details: `Requested client approval for campaign ID ${id}`
+            });
+
+            successResponse(res, { id, status: 'PENDING_CLIENT_APPROVAL' }, 'Client approval requested');
+        } catch (error) {
+            console.error('Request Approval Error:', error);
+            errorResponse(res, 'Failed to request client approval');
+        }
+    }
+
+    static async clientApproveCampaign(req, res) {
+        try {
+            // Note: In a real app, this endpoint might be public (via magic link token)
+            // For now, we simulate the client hitting it
+            const { id } = req.params;
+            
+            const [campaigns] = await require('../../config/database').pool.execute(`
+                SELECT * FROM ads_campaigns WHERE id = ?
+            `, [id]);
+
+            if (campaigns.length === 0) {
+                return errorResponse(res, 'Campaign not found', 404);
+            }
+
+            const campaign = campaigns[0];
+            
+            // Execute the campaign to the real ad networks via Phase 9 Publisher Service
+            try {
+                let campaignData = typeof campaign.settings === 'string' ? JSON.parse(campaign.settings) : (campaign.settings || {});
+                campaignData.name = campaign.campaign_name;
+                campaignData.budget = campaign.budget;
+                
+                if (campaign.platform === 'meta' || campaign.platform === 'facebook') {
+                    await AdPublisherService.publishToFacebook(campaignData, {
+                        accessToken: process.env.FACEBOOK_APP_SECRET || 'mock_token',
+                        adAccountId: campaign.account_id
+                    });
+                } else if (campaign.platform === 'google') {
+                    await AdPublisherService.publishToGoogle(campaignData, {
+                        clientId: process.env.GOOGLE_CLIENT_ID || 'mock_id',
+                        developerToken: process.env.GOOGLE_ADS_DEVELOPER_TOKEN || 'mock_token',
+                        customerId: campaign.account_id
+                    });
+                }
+            } catch (networkError) {
+                return errorResponse(res, `Failed to publish to ad network: ${networkError.message}`);
+            }
+
+            // Update status to ACTIVE
+            await require('../../config/database').pool.execute(
+                'UPDATE ads_campaigns SET status = ? WHERE id = ?',
+                ['ACTIVE', id]
+            );
+
+            successResponse(res, { id, status: 'ACTIVE' }, 'Campaign approved and published successfully');
+        } catch (error) {
+            console.error('Client Approve Error:', error);
+            errorResponse(res, 'Failed to process client approval');
         }
     }
 

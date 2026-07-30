@@ -62,8 +62,10 @@ router.get('/plan', billingController.getPlan);
  */
 router.post('/checkout', billingController.createCheckout);
 
+const { requireRole } = require('../middleware/rbac');
+
 router.get('/client-invoices', billingController.getClientInvoices);
-router.post('/client-invoices', billingController.generateClientInvoice);
-router.get('/mrr', billingController.getMRR);
+router.post('/client-invoices', requireRole(['admin', 'manager']), billingController.generateClientInvoice);
+router.get('/mrr', requireRole(['admin', 'manager']), billingController.getMRR);
 
 module.exports = router;

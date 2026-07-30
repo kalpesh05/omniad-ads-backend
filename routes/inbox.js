@@ -83,6 +83,7 @@ router.post('/messages/:id/reply', inboxController.replyToMessage);
  *         description: Suggestion generated successfully
  */
 router.post('/messages/:id/suggest-reply', inboxController.suggestReply);
+router.post('/messages/:id/moderate', inboxController.moderateMessage);
 router.post('/messages/seed', inboxController.seedMessage);
 
 module.exports = router;

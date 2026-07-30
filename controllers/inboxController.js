@@ -308,3 +308,60 @@ exports.seedMessage = asyncHandler(async (req, res) => {
     });
 });
 
+exports.moderateMessage = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    
+    // Fetch the message
+    const [messages] = await require('../config/database').pool.execute(
+        'SELECT * FROM inbox_messages WHERE id = ?',
+        [id]
+    );
+
+    if (messages.length === 0) {
+        throw new AppError('Message not found', 404);
+    }
+
+    const message = messages[0];
+    const text = message.message.toLowerCase();
+    
+    // Simulate AI Moderation Service
+    let newStatus = 'read';
+    let moderationReason = 'Safe';
+
+    const isToxic = text.includes('scam') || text.includes('fake') || text.includes('hate') || text.includes('stupid') || text.includes('suck');
+    const isSpam = text.includes('buy followers') || text.includes('crypto') || text.includes('bitcoin');
+    
+    if (isToxic || isSpam) {
+        newStatus = 'archived'; // Hiding it
+        moderationReason = isToxic ? 'Toxic Content Detected' : 'Spam Detected';
+    }
+
+    // Update in DB
+    await require('../config/database').pool.execute(
+        'UPDATE inbox_messages SET status = ? WHERE id = ?',
+        [newStatus, id]
+    );
+
+    // Create Audit Log for transparency
+    const AuditLog = require('../models/AuditLog');
+    await AuditLog.create({
+        team_id: message.team_id,
+        user_id: req.user.id,
+        action: 'AI_MODERATE',
+        resource: 'inbox_messages',
+        resource_id: id,
+        details: `Message from ${message.sender_name} was auto-moderated. Status changed to ${newStatus}. Reason: ${moderationReason}.`
+    });
+
+    res.status(200).json({
+        success: true,
+        data: {
+            id,
+            status: newStatus,
+            moderationReason
+        },
+        message: `Message moderated successfully. ${moderationReason}`
+    });
+});
+
+
