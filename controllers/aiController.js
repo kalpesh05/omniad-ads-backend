@@ -14,7 +14,7 @@ class AIController {
                 return errorResponse(res, 'Topic and Target Audience are required', 400);
             }
 
-            const activeProvider = provider || 'openai';
+            const activeProvider = provider || 'gemini';
             const result = await aiService.generateAdCopy(topic, targetAudience, platform || 'Facebook', activeProvider);
 
             if (!result.success) {
@@ -35,7 +35,7 @@ class AIController {
     static async generateInsights(req, res) {
         try {
             const { metricsSummary, provider } = req.body;
-            const activeProvider = provider || 'openai';
+            const activeProvider = provider || 'gemini';
 
             // Extract context from request to mirror legacy method signature
             const userId = req.user ? req.user.id : null;

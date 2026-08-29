@@ -28,7 +28,7 @@ class AIService {
    * @param {string} prompt The full instruction text
    * @param {string} provider 'openai' | 'anthropic' | 'gemini'
    */
-  async _generateCompletion(prompt, provider = 'openai') {
+  async _generateCompletion(prompt, provider = 'gemini') {
     try {
       switch (provider.toLowerCase()) {
         case 'openai':
@@ -73,7 +73,7 @@ class AIService {
   /**
    * Generate engaging Ad Copy targeting a specific audience
    */
-  async generateAdCopy(topic, targetAudience, platform = 'Facebook', provider = 'openai') {
+  async generateAdCopy(topic, targetAudience, platform = 'Facebook', provider = 'gemini') {
     const prompt = `
 You are an expert digital marketing copywriter. Generate 3 unique, high-converting ad variations for ${platform}.
 Topic/Product: ${topic}
@@ -100,7 +100,7 @@ Do not wrap it in markdown block quotes. Just the raw JSON array.
    * Provide actionable insights off raw tracking metrics
    * (Overrides the previous mock implementation)
    */
-  async getInsights(userId, propertyId, startDate, endDate, metricsSummary = null, provider = 'openai') {
+  async getInsights(userId, propertyId, startDate, endDate, metricsSummary = null, provider = 'gemini') {
     if (!metricsSummary) {
       metricsSummary = "Generic increase in CTR but lower conversion rate."; // Fallback for pure testing
     }
@@ -130,7 +130,7 @@ Format your response as a valid JSON array of objects exactly like this:
   // Legacy mapping to prevent older routes from crashing
   async chat(userId, message, context = {}) {
     try {
-      const response = await this._generateCompletion(message, 'openai');
+      const response = await this._generateCompletion(message, 'gemini');
       return { success: true, data: { response, timestamp: new Date().toISOString(), context } };
     } catch (error) {
       return { success: false, error: error.message };
