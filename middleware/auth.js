@@ -108,6 +108,7 @@ const optionalAuth = async (req, res, next) => {
 
 module.exports = {
   authenticateToken,
+  verifyToken: authenticateToken,
   requireRole,
   requireAdmin,
   requireAdminOrModerator,
