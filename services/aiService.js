@@ -55,10 +55,24 @@ class AIService {
         case 'google':
           this.gemini = await this._getGeminiClient();
           if (!this.gemini) throw new Error('Gemini API Key is missing.');
-          const geminiResponse = await this.gemini.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-          });
+          
+          let geminiResponse;
+          try {
+            geminiResponse = await this.gemini.models.generateContent({
+              model: 'gemini-3.8-flash',
+              contents: prompt,
+            });
+          } catch (firstErr) {
+            if (firstErr.message && (firstErr.message.includes('503') || firstErr.message.includes('429'))) {
+              await new Promise(r => setTimeout(r, 1200));
+              geminiResponse = await this.gemini.models.generateContent({
+                model: 'gemini-3.8-flash',
+                contents: prompt,
+              });
+            } else {
+              throw firstErr;
+            }
+          }
           return geminiResponse.text;
 
         default:
