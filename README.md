@@ -1,6 +1,6 @@
-# OmniAds Backend API
+# GrowthOS Backend API
 
-Welcome to the backend repository of **OmniAds**, the high-concurrency engine powering our AI Agency-in-a-Box operating system.
+Welcome to the backend repository of **GrowthOS**, the high-concurrency engine powering our autonomous AI Operating System.
 
 ---
 

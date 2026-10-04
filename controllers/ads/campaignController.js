@@ -357,7 +357,7 @@ class CampaignController {
 
             // Enforce Campaign Creation limits
             // We assume 'teamId' is attached to the user session, or passed in query. 
-            // In OmniAds it looks like team relation might be abstracted via user ID right now (campaigns bound to User)
+            // In GrowthOS it looks like team relation might be abstracted via user ID right now (campaigns bound to User)
             // But if there's a teamId we'll use it, else fallback to skipping check or doing user-level
             const teamId = req.query.teamId || req.body.teamId;
             if (teamId) {

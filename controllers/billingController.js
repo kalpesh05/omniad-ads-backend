@@ -264,7 +264,7 @@ exports.generateClientInvoice = async (req, res) => {
             customer: customer.id,
             amount: Math.round(amount * 100), // Stripe uses cents
             currency: 'usd',
-            description: 'AI Autonomous Ad Management & Spend (OmniAds)',
+            description: 'AI Autonomous Ad Management & Spend (GrowthOS)',
         });
 
         // 3. Generate the Invoice

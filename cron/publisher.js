@@ -2,7 +2,7 @@ const cron = require('node-cron');
 const ContentPublisher = require('../services/contentPublisher');
 
 /**
- * Initializes the background cron jobs for the OmniAds backend.
+ * Initializes the background cron jobs for the GrowthOS backend.
  */
 function initCronJobs() {
     console.log('[Cron] Initializing background publisher jobs...');

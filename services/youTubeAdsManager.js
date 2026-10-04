@@ -127,7 +127,7 @@ class YouTubeAdsManager {
         };
 
         // Note: A real video upload requires sending the file stream via POST to /upload/youtube/v3/videos
-        // Because OmniAds backend currently just stores media URLs, we mimic the upload structure.
+        // Because GrowthOS backend currently just stores media URLs, we mimic the upload structure.
         return await this.executeYouTubeRequest(userId, 'POST', '/videos', metadata, {
             part: 'snippet,status'
         });
