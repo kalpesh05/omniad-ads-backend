@@ -1,7 +1,7 @@
 {
-  "name": "omniads-backend",
+  "name": "growthos-backend",
   "version": "1.0.0",
-  "description": "OmniAds Backend API",
+  "description": "GrowthOS Backend API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

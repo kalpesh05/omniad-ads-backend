@@ -82,7 +82,7 @@ class ReportsService {
         where: { team_id: report.team_id }
       });
 
-      const brandName = branding?.brand_name || 'OmniAds Premium';
+      const brandName = branding?.brand_name || 'GrowthOS Enterprise';
       const brandVoice = branding?.brand_voice || 'Professional';
 
       // Generate the PDF
@@ -130,7 +130,7 @@ class ReportsService {
           <div class="header">
             <div>
               <div class="brand">${brandName}</div>
-              <div style="font-size: 12px; color: #666; margin-top: 4px;">Powered by OmniAds</div>
+              <div style="font-size: 12px; color: #666; margin-top: 4px;">Powered by GrowthOS</div>
             </div>
             <div style="text-align: right;">
               <div class="report-title">${report.report_name}</div>

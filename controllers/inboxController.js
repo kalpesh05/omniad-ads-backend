@@ -266,9 +266,9 @@ Return ONLY the direct text response of the reply. Do not add quotes, introducti
                 suggestion = `Hello ${sender}, I'm very sorry to hear you're experiencing issues. Let me look into this right away for you. Can you please direct message (DM) us your order details so we can resolve this immediately?`;
             } else if (isCollab) {
                 if (platform === 'linkedin') {
-                    suggestion = `Hi ${sender}, thank you for reaching out! We are always open to exciting collaborations and partnerships. Please send the details to our partnerships email (collab@omniads.com) and our team will review it.`;
+                    suggestion = `Hi ${sender}, thank you for reaching out! We are always open to exciting collaborations and partnerships. Please send the details to our partnerships email (collab@growthos.io) and our team will review it.`;
                 } else {
-                    suggestion = `Hi ${sender}! Thanks for reaching out. We'd love to discuss potential collaborations. Send us a DM with your proposal, or email us at collab@omniads.com!`;
+                    suggestion = `Hi ${sender}! Thanks for reaching out. We'd love to discuss potential collaborations. Send us a DM with your proposal, or email us at collab@growthos.io!`;
                 }
             } else {
                 suggestion = `Hi ${sender}, thank you for your message! How can I help you today?`;
