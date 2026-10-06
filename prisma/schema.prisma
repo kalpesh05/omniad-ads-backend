@@ -345,6 +345,7 @@ model teams {
   aiCreatives      ai_creatives[]
   clientPortals    client_portals[]
   agencyLeads      agency_leads[]
+  organicPosts     organic_posts[]
 
   @@index([owner_id], map: "idx_owner_id")
 }
@@ -553,4 +554,42 @@ model agency_leads {
   teams            teams    @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: Restrict)
 
   @@index([team_id])
+}
+
+model organic_posts {
+  id              String   @id @default(uuid()) @db.VarChar(36)
+  team_id         String   @db.VarChar(36)
+  platform        String   @db.VarChar(50) // instagram, facebook, youtube, linkedin, tiktok
+  external_id     String   @db.VarChar(100) // platform post / video id
+  media_type      String   @db.VarChar(50) // REELS, IMAGE, VIDEO, CAROUSEL_ALBUM, POST
+  title           String?  @db.VarChar(255)
+  caption         String?  @db.Text
+  media_url       String?  @db.VarChar(1000)
+  thumbnail_url   String?  @db.VarChar(1000)
+  permalink       String?  @db.VarChar(500)
+  posted_at       DateTime @db.Timestamp(0)
+  
+  // Performance metrics
+  views           Int      @default(0) // Plays for Reels/Video, Impressions for images
+  reach           Int      @default(0)
+  impressions     Int      @default(0)
+  likes           Int      @default(0)
+  comments        Int      @default(0)
+  shares          Int      @default(0)
+  saved           Int      @default(0)
+  engagement_rate Float    @default(0)
+  retention_rate  Float?   @default(0) // Avg watch time or completion %
+  
+  // AI analysis cache
+  ai_score        Int?
+  ai_hook_audit   String?  @db.Text
+  ai_tags         String?  @db.VarChar(255) // Content pillars: Educational, Promo, etc.
+  
+  created_at      DateTime @default(now()) @db.Timestamp(0)
+  updated_at      DateTime @default(now()) @db.Timestamp(0)
+  teams           teams    @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@unique([platform, external_id])
+  @@index([team_id, posted_at])
+  @@index([platform, media_type])
 }

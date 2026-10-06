@@ -32,4 +32,6 @@ router.post('/export', ReportController.exportAnalyticsGeneric);
 
 router.get('/ga4', AnalyticsController.getAnalyticsGA4Generic);
 
+router.get('/shopify', AnalyticsController.getAnalyticsShopifyGeneric);
+
 module.exports = router;

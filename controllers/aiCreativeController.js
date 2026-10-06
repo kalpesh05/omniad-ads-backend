@@ -40,3 +40,29 @@ exports.generateCreative = async (req, res) => {
         errorResponse(res, 'Failed to generate creative');
     }
 };
+
+const CreativeIntelligenceService = require('../services/creativeIntelligenceService');
+
+exports.getLeaderboard = async (req, res) => {
+    try {
+        const teamId = req.query.teamId;
+        const leaderboard = await CreativeIntelligenceService.getCreativeLeaderboard(teamId, req.query);
+        successResponse(res, leaderboard, 'Creative intelligence leaderboard retrieved');
+    } catch (error) {
+        console.error('getLeaderboard error:', error);
+        errorResponse(res, 'Failed to retrieve creative leaderboard');
+    }
+};
+
+exports.diagnoseCreative = async (req, res) => {
+    try {
+        const creative = req.body.creative;
+        if (!creative) return errorResponse(res, 'creative data required', 400);
+
+        const diagnosis = await CreativeIntelligenceService.diagnoseCreative(creative);
+        successResponse(res, diagnosis, 'Creative diagnosed successfully');
+    } catch (error) {
+        console.error('diagnoseCreative error:', error);
+        errorResponse(res, 'Failed to diagnose creative');
+    }
+};

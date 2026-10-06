@@ -101,6 +101,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/brand', brandRoutes);
+app.use('/api/social', require('./routes/social'));
 app.use('/api/mobile', require('./routes/mobile'));
 
 // Error handling middleware
