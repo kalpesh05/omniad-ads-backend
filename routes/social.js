@@ -20,4 +20,7 @@ router.post('/analyze/:id', SocialController.analyzeMedia);
 // POST /api/social/repurpose/:id - Cross-channel content repurposing
 router.post('/repurpose/:id', SocialController.repurposeMedia);
 
+// POST /api/social/boost/:id - Organic-to-Paid Spark Engine (1-Click Boost)
+router.post('/boost/:id', SocialController.boostMedia);
+
 module.exports = router;

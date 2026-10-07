@@ -237,6 +237,24 @@ class OrganicPost {
             }
         });
     }
+
+    /**
+     * Mark post as boosted and save campaign metadata
+     */
+    static async boostPost(postId, boostData) {
+        const { campaignId, dailyBudget, targetAudience } = boostData;
+        return await prisma.organic_posts.update({
+            where: { id: postId },
+            data: {
+                is_boosted: true,
+                boosted_campaign_id: campaignId,
+                boost_daily_budget: dailyBudget ? parseFloat(dailyBudget) : 50.00,
+                boost_target_audience: targetAudience || 'Advantage+ 1% Lookalike',
+                boosted_at: new Date(),
+                updated_at: new Date()
+            }
+        });
+    }
 }
 
 module.exports = OrganicPost;

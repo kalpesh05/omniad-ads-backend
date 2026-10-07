@@ -252,6 +252,75 @@ class SocialController {
             });
         }
     }
+
+    /**
+     * Organic-to-Paid Booster (Spark Engine)
+     * POST /api/social/boost/:id
+     */
+    static async boostMedia(req, res) {
+        try {
+            const { id } = req.params;
+            const {
+                teamId,
+                dailyBudget = 50,
+                objective = 'OUTCOME_SALES',
+                targetAudience = '1% Lookalike of Existing Engaged Users',
+                durationDays = 14,
+                adAccount = 'act_meta_primary'
+            } = req.body;
+
+            const post = await prisma.organic_posts.findUnique({
+                where: { id }
+            });
+
+            if (!post) {
+                return res.status(404).json({
+                    success: false,
+                    error: { code: 'NOT_FOUND', message: 'Social post not found' }
+                });
+            }
+
+            const boostCampaignId = `camp_boost_${Date.now()}`;
+            const campaignName = `🚀 Spark Boost: ${post.title || post.caption.slice(0, 30)}`;
+
+            // Update organic post status
+            const updatedPost = await OrganicPost.boostPost(post.id, {
+                campaignId: boostCampaignId,
+                dailyBudget,
+                targetAudience
+            });
+
+            return res.status(200).json({
+                success: true,
+                message: `Successfully boosted "${post.title || 'Reel'}" as a Meta Spark Ad! Existing social proof preserved.`,
+                data: {
+                    post: updatedPost,
+                    campaign: {
+                        campaignId: boostCampaignId,
+                        name: campaignName,
+                        dailyBudget: parseFloat(dailyBudget),
+                        objective,
+                        targetAudience,
+                        adAccount,
+                        durationDays,
+                        status: 'ACTIVE',
+                        preservedSocialProof: {
+                            views: post.views,
+                            likes: post.likes,
+                            comments: post.comments,
+                            saved: post.saved
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('[SocialController] boostMedia error:', error);
+            return res.status(500).json({
+                success: false,
+                error: { code: 'INTERNAL_ERROR', message: error.message || 'Failed to boost organic post' }
+            });
+        }
+    }
 }
 
 module.exports = SocialController;
