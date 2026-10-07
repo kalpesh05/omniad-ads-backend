@@ -66,3 +66,100 @@ exports.diagnoseCreative = async (req, res) => {
         errorResponse(res, 'Failed to diagnose creative');
     }
 };
+
+const FatigueAlertService = require('../services/fatigueAlertService');
+
+/**
+ * Get fatigue alert settings for team
+ * GET /api/ai-creative/alerts/settings
+ */
+exports.getAlertSettings = async (req, res) => {
+    try {
+        const teamId = req.query.teamId || 'default_team';
+        const settings = FatigueAlertService.getSettings(teamId);
+        successResponse(res, settings, 'Alert settings retrieved');
+    } catch (error) {
+        console.error('getAlertSettings error:', error);
+        errorResponse(res, 'Failed to get alert settings');
+    }
+};
+
+/**
+ * Update fatigue alert settings
+ * PUT /api/ai-creative/alerts/settings
+ */
+exports.updateAlertSettings = async (req, res) => {
+    try {
+        const teamId = req.body.teamId || 'default_team';
+        const settings = FatigueAlertService.updateSettings(teamId, req.body);
+        successResponse(res, settings, 'Alert settings updated successfully');
+    } catch (error) {
+        console.error('updateAlertSettings error:', error);
+        errorResponse(res, 'Failed to update alert settings');
+    }
+};
+
+/**
+ * Test Slack or Webhook connection
+ * POST /api/ai-creative/alerts/test
+ */
+exports.testAlert = async (req, res) => {
+    try {
+        const { channel, webhookUrl, teamName } = req.body;
+        const result = await FatigueAlertService.testAlert({
+            channel,
+            webhookUrl,
+            teamName
+        });
+        successResponse(res, result, result.message);
+    } catch (error) {
+        console.error('testAlert error:', error);
+        errorResponse(res, error.message || 'Failed to dispatch test alert', 400);
+    }
+};
+
+/**
+ * Scan active creatives and dispatch alerts to Slack / Webhooks
+ * POST /api/ai-creative/alerts/scan
+ */
+exports.scanAndDispatchAlerts = async (req, res) => {
+    try {
+        const teamId = req.body.teamId || req.query.teamId || 'default_team';
+        const results = await FatigueAlertService.scanAndDispatch(teamId);
+        successResponse(res, results, `Scanned ${results.scannedCount} creatives. Found ${results.fatiguedCount} fatigued assets.`);
+    } catch (error) {
+        console.error('scanAndDispatchAlerts error:', error);
+        errorResponse(res, 'Failed to scan and dispatch alerts');
+    }
+};
+
+/**
+ * Dispatch an instant Slack alert for a specific creative card
+ * POST /api/ai-creative/alerts/dispatch-single
+ */
+exports.dispatchSingleAlert = async (req, res) => {
+    try {
+        const { creative, teamId = 'default_team', channel = 'slack' } = req.body;
+        if (!creative) return errorResponse(res, 'creative data required', 400);
+
+        const config = FatigueAlertService.getSettings(teamId);
+        const webhookUrl = channel === 'slack' ? config.slack_webhook_url : config.custom_webhook_url;
+
+        if (!webhookUrl) {
+            return errorResponse(res, `No ${channel} webhook URL configured. Please configure in Alert Settings.`, 400);
+        }
+
+        if (channel === 'slack') {
+            const payload = FatigueAlertService.buildSlackBlockKit(creative);
+            await FatigueAlertService.sendSlack(webhookUrl, payload);
+        } else {
+            await FatigueAlertService.sendCustomWebhook(webhookUrl, { creative, teamId });
+        }
+
+        successResponse(res, { dispatched: true }, `Fatigue alert for "${creative.adName}" sent to ${channel}!`);
+    } catch (error) {
+        console.error('dispatchSingleAlert error:', error);
+        errorResponse(res, error.message || 'Failed to dispatch alert', 500);
+    }
+};
+
