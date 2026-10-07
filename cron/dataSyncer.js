@@ -2,6 +2,9 @@ const cron = require('node-cron');
 const { pool } = require('../config/database');
 const DataSyncService = require('../services/dataSyncService');
 const AdPlatformAuthenticator = require('../utils/adsPlatformAuthenticator');
+const FatigueAlertService = require('../services/fatigueAlertService');
+const SocialSyncService = require('../services/socialSyncService');
+const prisma = require('../config/prisma');
 
 const authenticator = new AdPlatformAuthenticator();
 
@@ -47,10 +50,33 @@ const syncAllActiveAccounts = async () => {
     }
 };
 
-const initDataSyncCron = () => {
-    // Run every 3 hours natively in Node
-    cron.schedule('0 */3 * * *', syncAllActiveAccounts);
-    console.log('🕒 Data Sync engine scheduled (Every 3 hours)');
+const autoScanCreativeFatigue = async () => {
+    console.log('🔍 [Cron] Running automated creative fatigue scan & alert dispatch...');
+    try {
+        const teams = await prisma.teams.findMany({ select: { id: true } });
+        for (const team of teams) {
+            // Also ensure initial benchmark organic media is active
+            await SocialSyncService.ensureInitialPosts(team.id);
+
+            const results = await FatigueAlertService.scanAndDispatch(team.id);
+            if (results && results.fatiguedCount > 0) {
+                console.log(`[Cron] Team ${team.id}: ${results.fatiguedCount} fatigued assets detected. Dispatched ${results.dispatched.slack} Slack alert(s).`);
+            }
+        }
+        console.log('✅ [Cron] Automated creative fatigue scan finished');
+    } catch (err) {
+        console.error('❌ [Cron] Creative fatigue scan failed:', err.message);
+    }
 };
 
-module.exports = { initDataSyncCron, syncAllActiveAccounts };
+const initDataSyncCron = () => {
+    // Run platform sync every 3 hours natively in Node
+    cron.schedule('0 */3 * * *', syncAllActiveAccounts);
+
+    // Run automated creative fatigue scan every 6 hours
+    cron.schedule('0 */6 * * *', autoScanCreativeFatigue);
+
+    console.log('🕒 Data Sync engine & Creative Fatigue Cron scheduled');
+};
+
+module.exports = { initDataSyncCron, syncAllActiveAccounts, autoScanCreativeFatigue };
