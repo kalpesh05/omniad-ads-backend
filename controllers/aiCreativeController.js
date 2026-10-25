@@ -163,3 +163,37 @@ exports.dispatchSingleAlert = async (req, res) => {
     }
 };
 
+const PlatformSkillsService = require('../services/platformSkillsService');
+
+/**
+ * Get all available platform skills, formulas, and linters
+ * GET /api/ai-creative/skills
+ */
+exports.getPlatformSkills = async (req, res) => {
+    try {
+        const formulas = PlatformSkillsService.getPlatformFormulas();
+        successResponse(res, formulas, 'Platform skills and formulas retrieved');
+    } catch (error) {
+        console.error('getPlatformSkills error:', error);
+        errorResponse(res, 'Failed to retrieve platform skills');
+    }
+};
+
+/**
+ * Lint copy or script for platform accuracy and AI clichés
+ * POST /api/ai-creative/skills/lint
+ */
+exports.lintContent = async (req, res) => {
+    try {
+        const { platform, text } = req.body;
+        if (!platform || text === undefined) {
+            return errorResponse(res, 'platform and text required', 400);
+        }
+        const result = PlatformSkillsService.lintContent(platform, text);
+        successResponse(res, result, 'Content linting completed');
+    } catch (error) {
+        console.error('lintContent error:', error);
+        errorResponse(res, 'Failed to lint content');
+    }
+};
+

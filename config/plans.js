@@ -4,7 +4,7 @@
 const PLANS = {
     free: {
         id: 'free',
-        name: 'Free Trial (1 Week)',
+        name: 'Free Trial (14 Days)',
         product_id: null, // No stripe product needed for free tier usually
         limits: {
             team_members: 1,

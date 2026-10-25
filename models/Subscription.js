@@ -30,14 +30,14 @@ class Subscription {
 
     /**
      * Create an initial subscription for a team (called during team creation usually)
-     * Implements a 1-week trial period starting from creation.
+     * Implements a 14-day free trial period starting from creation.
      */
     static async createForTeam(teamId) {
         const id = uuidv4();
 
-        // Set trial end date to 7 days from now
+        // Set trial end date to 14 days from now
         const trialEndsAt = new Date();
-        trialEndsAt.setDate(trialEndsAt.getDate() + 7);
+        trialEndsAt.setDate(trialEndsAt.getDate() + 14);
 
         const sql = `
       INSERT INTO subscriptions (id, team_id, plan_id, status, trial_ends_at)

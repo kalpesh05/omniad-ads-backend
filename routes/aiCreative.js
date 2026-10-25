@@ -18,4 +18,8 @@ router.post('/alerts/test', controller.testAlert);
 router.post('/alerts/scan', controller.scanAndDispatchAlerts);
 router.post('/alerts/dispatch-single', controller.dispatchSingleAlert);
 
+// Cross-Platform Agent Skills, Hook Formulas & Content Linters
+router.get('/skills', controller.getPlatformSkills);
+router.post('/skills/lint', controller.lintContent);
+
 module.exports = router;
