@@ -6,6 +6,7 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
+COPY prisma ./prisma/
 
 # Install dependencies
 #RUN npm ci --only=production && npm cache clean --force
@@ -17,6 +18,9 @@ RUN addgroup -g 1001 -S nodejs && \
 
 # Copy application code
 COPY . .
+
+# Generate Prisma Client
+RUN npx prisma generate
 
 # Create logs directory
 RUN mkdir -p logs && chown -R nodejs:nodejs logs
